@@ -11,6 +11,7 @@ import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { Screen } from '@/components/Screen';
 import { MiniPlayer } from '@/components/MiniPlayer';
 import { usePlayer, type Song } from '@/contexts/PlayerContext';
+import { useSafeRouter } from '@/hooks/useSafeRouter';
 import { api } from '@/utils/api';
 
 type TabType = 'songs' | 'artists' | 'playlists';
@@ -30,6 +31,7 @@ function SongItem({ song, index, onPress }: { song: Song; index: number; onPress
 
 export default function SearchScreen() {
   const insets = useSafeAreaInsets();
+  const router = useSafeRouter();
   const { playSong } = usePlayer();
   const [query, setQuery] = useState('');
   const [activeTab, setActiveTab] = useState<TabType>('songs');
@@ -158,24 +160,29 @@ export default function SearchScreen() {
         showsVerticalScrollIndicator={false}
         keyboardShouldPersistTaps="handled"
       >
-        {/* Search Bar */}
-        <View style={styles.searchBar}>
-          <FontAwesome6 name="magnifying-glass" size={14} color="#8B7D6B" />
-          <TextInput
-            style={styles.searchInput}
-            value={query}
-            onChangeText={setQuery}
-            placeholder="搜索歌曲、歌手、歌单"
-            placeholderTextColor="#8B7D6B"
-            returnKeyType="search"
-            onSubmitEditing={() => doSearch(query)}
-            autoFocus
-          />
-          {query.length > 0 && (
-            <TouchableOpacity onPress={() => { setQuery(''); setHasSearched(false); }}>
-              <FontAwesome6 name="xmark" size={14} color="#8B7D6B" />
-            </TouchableOpacity>
-          )}
+        {/* Header with Back Button and Search Bar */}
+        <View style={styles.headerRow}>
+          <TouchableOpacity style={styles.backButton} onPress={() => router.back()} hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}>
+            <FontAwesome6 name="arrow-left" size={18} color="#4A4539" />
+          </TouchableOpacity>
+          <View style={styles.searchBar}>
+            <FontAwesome6 name="magnifying-glass" size={14} color="#8B7D6B" />
+            <TextInput
+              style={styles.searchInput}
+              value={query}
+              onChangeText={setQuery}
+              placeholder="搜索歌曲、歌手、歌单"
+              placeholderTextColor="#8B7D6B"
+              returnKeyType="search"
+              onSubmitEditing={() => doSearch(query)}
+              autoFocus
+            />
+            {query.length > 0 && (
+              <TouchableOpacity onPress={() => { setQuery(''); setHasSearched(false); }}>
+                <FontAwesome6 name="xmark" size={14} color="#8B7D6B" />
+              </TouchableOpacity>
+            )}
+          </View>
         </View>
 
         {!hasSearched ? (
@@ -257,9 +264,17 @@ export default function SearchScreen() {
 const styles = StyleSheet.create({
   scroll: { flex: 1 },
   content: { paddingBottom: 20 },
+  headerRow: {
+    flexDirection: 'row', alignItems: 'center', gap: 10,
+    paddingHorizontal: 16, marginBottom: 12,
+  },
+  backButton: {
+    width: 36, height: 36, borderRadius: 18,
+    backgroundColor: 'rgba(125,139,110,0.1)',
+    justifyContent: 'center', alignItems: 'center',
+  },
   searchBar: {
-    flexDirection: 'row', alignItems: 'center', gap: 8,
-    marginHorizontal: 20, marginBottom: 20,
+    flex: 1, flexDirection: 'row', alignItems: 'center', gap: 8,
     backgroundColor: 'rgba(125,139,110,0.08)',
     borderRadius: 24, paddingHorizontal: 16, paddingVertical: 10,
   },

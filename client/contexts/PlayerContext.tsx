@@ -98,6 +98,8 @@ export function PlayerProvider({ children }: { children: React.ReactNode }) {
 
   const soundRef = useRef<Audio.Sound | null>(null);
   const progressTimerRef = useRef<ReturnType<typeof setInterval> | null>(null);
+  // Use ref for handleFinish to avoid circular dependency
+  const handleFinishRef = useRef<() => void>(() => {});
 
   // Clean up sound on unmount
   useEffect(() => {
@@ -147,94 +149,13 @@ export function PlayerProvider({ children }: { children: React.ReactNode }) {
     };
   }, [state.isPlaying, state.lyrics.length]);
 
-  const loadAndPlay = useCallback(async (song: Song) => {
-    setState(prev => ({ ...prev, isLoading: true }));
-
-    try {
-      // Get song URL from Netease API
-      const urlRes = await api.getSongUrl(song.id);
-      const url = urlRes?.data?.url;
-
-      if (!url) {
-        // Fallback: try with lower bitrate
-        const fallbackRes = await api.getSongUrl(song.id, 128000);
-        const fallbackUrl = fallbackRes?.data?.url;
-
-        if (!fallbackUrl) {
-          setState(prev => ({ ...prev, isLoading: false }));
-          return;
-        }
-
-        await playAudio(fallbackUrl, song);
-        return;
-      }
-
-      await playAudio(url, song);
-    } catch (error) {
-      console.error('Load song error:', error);
-      setState(prev => ({ ...prev, isLoading: false }));
-    }
-  }, []);
-
-  const playAudio = useCallback(async (url: string, song: Song) => {
-    try {
-      // Unload previous sound
-      if (soundRef.current) {
-        await soundRef.current.unloadAsync();
-        soundRef.current = null;
-      }
-
-      // Set audio mode
-      await Audio.setAudioModeAsync({
-        allowsRecordingIOS: false,
-        playsInSilentModeIOS: true,
-        staysActiveInBackground: false,
-      });
-
-      const { sound } = await Audio.Sound.createAsync(
-        { uri: url },
-        { shouldPlay: true },
-        (status) => {
-          if (status.isLoaded && status.didJustFinish) {
-            // Auto next
-            handleFinish();
-          }
-        }
-      );
-
-      soundRef.current = sound;
-
-      // Load lyrics
-      let lyrics: LyricLine[] = [];
-      try {
-        const lyricRes = await api.getLyric(song.id);
-        if (lyricRes?.data?.lyric) {
-          lyrics = parseLyric(lyricRes.data.lyric);
-        }
-      } catch {
-        // Lyrics not available
-      }
-
-      setState(prev => ({
-        ...prev,
-        isPlaying: true,
-        songUrl: url,
-        lyrics,
-        currentLyricIndex: 0,
-        isLoading: false,
-      }));
-    } catch (error) {
-      console.error('Play audio error:', error);
-      setState(prev => ({ ...prev, isLoading: false }));
-    }
-  }, []);
-
+  // Handle song finish - defined first to be available for playAudio
   const handleFinish = useCallback(() => {
     setState(prev => {
       if (prev.playMode === 'repeat') {
-        // Repeat: replay current song
         if (prev.currentSong && soundRef.current) {
           soundRef.current.setPositionAsync(0);
+          soundRef.current.playAsync();
           return { ...prev, currentTime: 0, progress: 0, currentLyricIndex: 0 };
         }
         return prev;
@@ -251,12 +172,11 @@ export function PlayerProvider({ children }: { children: React.ReactNode }) {
         nextIndex = 0;
       }
 
-      const nextSong = prev.queue[nextIndex];
-      if (nextSong) {
-        // Will trigger loadAndPlay via effect
+      const nextSongItem = prev.queue[nextIndex];
+      if (nextSongItem) {
         return {
           ...prev,
-          currentSong: nextSong,
+          currentSong: nextSongItem,
           queueIndex: nextIndex,
           currentTime: 0,
           progress: 0,
@@ -268,12 +188,98 @@ export function PlayerProvider({ children }: { children: React.ReactNode }) {
     });
   }, []);
 
+  // Keep ref in sync
+  handleFinishRef.current = handleFinish;
+
+  const playAudio = useCallback(async (url: string, song: Song) => {
+    try {
+      // Unload previous sound
+      if (soundRef.current) {
+        await soundRef.current.unloadAsync();
+        soundRef.current = null;
+      }
+
+      // Set audio mode for playback
+      await Audio.setAudioModeAsync({
+        allowsRecordingIOS: false,
+        playsInSilentModeIOS: true,
+        staysActiveInBackground: false,
+        shouldDuckAndroid: true,
+        playThroughEarpieceAndroid: false,
+      });
+
+      console.log('[Player] Loading audio from:', url);
+
+      const { sound } = await Audio.Sound.createAsync(
+        { uri: url },
+        { shouldPlay: true, progressUpdateIntervalMillis: 500 },
+        (status) => {
+          if (status.isLoaded) {
+            if (status.didJustFinish) {
+              // Use ref to avoid circular dependency
+              handleFinishRef.current();
+            }
+          } else if (status.isLoaded === false && status.error) {
+            console.error('[Player] Audio load error:', status.error);
+          }
+        }
+      );
+
+      soundRef.current = sound;
+      console.log('[Player] Audio loaded and playing');
+
+      // Load lyrics
+      let lyrics: LyricLine[] = [];
+      try {
+        const lyricRes = await api.getLyric(song.id);
+        if (lyricRes?.data?.lrc) {
+          lyrics = parseLyric(lyricRes.data.lrc);
+        }
+      } catch {
+        // Lyrics not available
+      }
+
+      setState(prev => ({
+        ...prev,
+        isPlaying: true,
+        songUrl: url,
+        lyrics,
+        currentLyricIndex: 0,
+        isLoading: false,
+      }));
+    } catch (error) {
+      console.error('[Player] Play audio error:', error);
+      setState(prev => ({ ...prev, isLoading: false }));
+    }
+  }, []);
+
+  const loadAndPlay = useCallback(async (song: Song) => {
+    setState(prev => ({ ...prev, isLoading: true }));
+
+    try {
+      // Get song URL from API
+      const urlRes = await api.getSongUrl(song.id);
+      const url = urlRes?.data?.url;
+
+      if (url) {
+        console.log('[Player] Got URL from API:', url);
+        await playAudio(url, song);
+      } else {
+        console.warn('[Player] No URL from API, trying fallback');
+        setState(prev => ({ ...prev, isLoading: false }));
+      }
+    } catch (error) {
+      console.error('[Player] Load song error:', error);
+      setState(prev => ({ ...prev, isLoading: false }));
+    }
+  }, [playAudio]);
+
   // Auto-load song when currentSong changes
   useEffect(() => {
     if (state.currentSong) {
       loadAndPlay(state.currentSong);
     }
-  }, [state.currentSong?.id, loadAndPlay]);
+  }, [state.currentSong?.id]); // eslint-disable-line react-hooks/exhaustive-deps
 
   const playSong = useCallback((song: Song, queue?: Song[]) => {
     const newQueue = queue || [song];
@@ -290,12 +296,16 @@ export function PlayerProvider({ children }: { children: React.ReactNode }) {
   const togglePlay = useCallback(async () => {
     if (!soundRef.current) return;
 
-    if (state.isPlaying) {
-      await soundRef.current.pauseAsync();
-      setState(prev => ({ ...prev, isPlaying: false }));
-    } else {
-      await soundRef.current.playAsync();
-      setState(prev => ({ ...prev, isPlaying: true }));
+    try {
+      if (state.isPlaying) {
+        await soundRef.current.pauseAsync();
+        setState(prev => ({ ...prev, isPlaying: false }));
+      } else {
+        await soundRef.current.playAsync();
+        setState(prev => ({ ...prev, isPlaying: true }));
+      }
+    } catch (error) {
+      console.error('[Player] Toggle play error:', error);
     }
   }, [state.isPlaying]);
 
@@ -309,7 +319,7 @@ export function PlayerProvider({ children }: { children: React.ReactNode }) {
       }
       const next = prev.queue[nextIndex];
       if (next) {
-        return { ...prev, currentSong: next, queueIndex: nextIndex, songUrl: null };
+        return { ...prev, currentSong: next, queueIndex: nextIndex };
       }
       return prev;
     });
@@ -335,7 +345,7 @@ export function PlayerProvider({ children }: { children: React.ReactNode }) {
       }
       const prevSongItem = prev.queue[prevIndex];
       if (prevSongItem) {
-        return { ...prev, currentSong: prevSongItem, queueIndex: prevIndex, songUrl: null };
+        return { ...prev, currentSong: prevSongItem, queueIndex: prevIndex };
       }
       return prev;
     });
@@ -358,14 +368,14 @@ export function PlayerProvider({ children }: { children: React.ReactNode }) {
   const seekTo = useCallback(async (progress: number) => {
     if (!soundRef.current) return;
     try {
-      const status = await soundRef.current.getStatusAsync() as any;
-      if (status.isLoaded) {
+      const status = await soundRef.current.getStatusAsync();
+      if (status.isLoaded && status.durationMillis) {
         const position = progress * status.durationMillis;
         await soundRef.current.setPositionAsync(position);
         setState(prev => ({ ...prev, progress, currentTime: position / 1000 }));
       }
-    } catch {
-      // ignore
+    } catch (error) {
+      console.error('[Player] Seek error:', error);
     }
   }, []);
 
@@ -378,18 +388,20 @@ export function PlayerProvider({ children }: { children: React.ReactNode }) {
   }, []);
 
   return (
-    <PlayerContext.Provider value={{
-      ...state,
-      playSong,
-      togglePlay,
-      nextSong,
-      prevSong,
-      toggleLike,
-      setPlayMode,
-      seekTo,
-      showMiniPlayer,
-      hideMiniPlayer,
-    }}>
+    <PlayerContext.Provider
+      value={{
+        ...state,
+        playSong,
+        togglePlay,
+        nextSong,
+        prevSong,
+        toggleLike,
+        setPlayMode,
+        seekTo,
+        showMiniPlayer,
+        hideMiniPlayer,
+      }}
+    >
       {children}
     </PlayerContext.Provider>
   );
