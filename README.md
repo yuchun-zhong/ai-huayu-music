@@ -1,261 +1,260 @@
-# Expo App + Express.js
+# 🌸 花语音乐 (Huayu Music)
 
-## 目录结构规范（严格遵循）
+> 森系浪漫风格的音乐播放器 App — 让每一首歌都像在花园里流淌
 
-当前仓库是一个 monorepo（基于 pnpm 的 workspace）
+## 📱 界面预览
 
-- Expo 代码在 client 目录，Express.js 代码在 server 目录
-- 本模板默认无 Tab Bar，可按需改造
+| 🏠 首页 | 🔍 搜索 |
+|:---:|:---:|
+| ![首页](assets/screenshot-home.png) | ![搜索](assets/screenshot-search.png) |
 
-├── client/                     # React Native 前端代码
-│   ├── app/                    # Expo Router 路由目录（仅路由配置）
-│   │   ├── _layout.tsx         # 根布局文件（必需，务必阅读）
-│   │   └── index.tsx           # 首页
-│   ├── screens/                # 页面实现目录（与 app/ 路由对应）
-│   │   └── demo/               # 示例页面
-│   │       └── index.tsx
-│   ├── components/             # 可复用组件
-│   │   └── Screen.tsx          # 页面容器组件（必用）
-│   ├── hooks/                  # 自定义 Hooks
-│   ├── contexts/               # React Context 代码
-│   ├── utils/                  # 工具函数
-│   ├── assets/                 # 静态资源
-|   └── package.json            # Expo 应用 package.json
-├── server/                     # 服务端代码根目录 (Express.js)
-|   ├── src/
-│   │   └── index.ts            # 服务端入口文件
-|   └── package.json            # 服务端 package.json
+| 🎵 发现 | 🤖 AI助手 | 👤 我的 |
+|:---:|:---:|:---:|
+| ![发现](assets/screenshot-discover.png) | ![AI助手](assets/screenshot-ai-assistant.png) | ![我的](assets/screenshot-profile.png) |
+
+---
+
+## ✨ 特色功能
+
+### 🎵 多音源搜索播放
+- 支持网易云音乐、咪咕音乐、B站音频等多个音乐源
+- 智能自动切换，一个源播不了自动试下一个
+- 搜索歌曲、歌手、歌单，一点即播
+
+### 🤖 AI 音乐助手
+- 自然语言生成专属歌单："给我推荐适合下雨天写代码的歌"
+- 心情推荐、场景歌单、歌词解读、音乐百科
+- 对话式交互，像跟一个懂音乐的朋友聊天
+
+### 🎼 精致播放体验
+- 花瓣形黑胶唱片旋转动画
+- 实时滚动歌词，当前行高亮
+- 唱片模式 / 歌词模式 自由切换
+
+### 📚 丰富的发现页
+- 每日推荐、热门榜单、新碟上架
+- 为你精准推荐，发现更多好音乐
+- 我的歌单、最近播放、我喜欢的音乐
+
+### 🌿 森系浪漫设计
+- 米白 + 鼠尾草绿 + 玫瑰粉 配色
+- 水彩叶片纹理、金色星光粒子、藤蔓花朵装饰
+- 每一个界面都是治愈系的视觉享受
+
+---
+
+## 📱 详细功能介绍
+
+### 🏠 首页 — 每日推荐 & 个性化发现
+森系浪漫风首页，每日推荐歌单、私人FM、热门榜单一目了然。花瓣形歌单卡片 + 藤蔓装饰元素，打开就被治愈。
+
+- 🌟 每日推荐：根据你的口味每天更新30首
+- 🎧 私人FM：随机播放惊喜好歌
+- 🔥 热门榜单：飙升榜、新歌榜、热歌榜实时更新
+- 💡 为你推荐：多分类选项卡，华语/欧美/日韩/民谣全覆盖
+
+---
+
+### 🔍 搜索页 — 多音源秒搜你想听的
+搜索框输入歌名、歌手或歌词，多平台同时搜索，结果合并展示。支持歌曲 / 歌手 / 歌单 / 专辑 分类筛选。
+
+- 🎵 多音源并行搜索：网易云 + 咪咕 + B站
+- 🎤 歌手分类：直接查看歌手全部热门歌曲
+- 📋 歌单分类：找到心仪歌单一键收藏
+- ⚡ 秒级响应，边打字边出结果
+
+---
+
+### 🔥 发现页 — 发现更多好音乐
+精选歌单、热门榜单、新碟上架，每天都有新发现。精美歌单封面，点进去就是惊喜。
+
+- 📚 官方精选歌单：晨起森语 / 午后花园 / 夜听花语
+- 🏆 各大榜单：云音乐热歌榜、新歌榜、原创榜
+- 💿 新碟上架：最新专辑第一时间推荐
+- 🎭 情绪歌单：开心 / 治愈 / 专注 / 浪漫 / 失眠
+
+---
+
+### 🤖 AI 助手页 — 懂你的音乐搭子
+像跟朋友聊天一样说需求，AI帮你生成专属歌单。心情好、心情差、学习、运动… 任何场景都能推荐。
+
+- 💬 自然语言生成歌单："给我做一个适合下雨天写代码的歌单"
+- 🎭 心情推荐："我今天有点丧，来点治愈的"
+- 🏕️ 场景歌单："明天露营，帮我做个露营歌单"
+- 📖 歌词解读："这首歌讲的是什么故事？"
+- 🎤 歌手探索："推荐和陈绮贞风格类似的歌手"
+- ✨ 回复中的歌曲点击即播，歌单一键收藏
+
+---
+
+### 💿 播放页 — 花瓣黑胶沉浸式体验
+花瓣形状黑胶唱片缓缓旋转，周围星光粒子流动。滚动歌词实时跟随，享受纯粹的音乐时光。
+
+- 🌸 花瓣形黑胶唱片，旋转动画优雅流畅
+- ✨ 金色星光粒子效果，梦幻氛围感
+- 📝 滚动歌词，当前行高亮，字里行间都是故事
+- 🔄 唱片模式 / 歌词模式 左右滑动切换
+- ⏮️ ⏯️ ⏭️ 完整播放控制，进度条随心拖动
+- ❤️ 喜欢 / 收藏 / 分享 / 评论 一应俱全
+
+---
+
+### 📚 我的 — 你的音乐花园
+所有收藏的歌单、喜欢的音乐、最近播放，都在你的专属音乐花园里。
+
+- ❤️ 我喜欢的音乐：每一颗心都是你的偏爱
+- 🕐 最近播放：找回刚才那首心动的歌
+- 📂 本地下载：离线也能听
+- 🎵 我的歌单：自建歌单，自定义封面和名字
+- 📥 收藏的歌单：收藏的宝藏都在这里
+
+---
+
+## 🚀 快速开始
+
+### 在线预览
+
+👉 [点击体验花语音乐](https://www.coze.cn/p/7656009939789316146)
+
+### 本地运行
+
+```bash
+# 克隆项目
+git clone https://github.com/你的用户名/huayu-music.git
+cd huayu-music
+
+# 安装依赖
+npm install
+
+# 启动开发服务器
+npm run dev
+
+# 打包构建
+npm run build
+```
+
+### 环境变量配置
+
+复制 `.env.example` 为 `.env`，填写你的配置：
+
+```env
+# 网易云音乐 API 地址（可选，不填使用内置公共源）
+VITE_NETEASE_API_BASE=https://your-netease-api.example.com
+
+# 咪咕音乐 API 地址（可选）
+VITE_MIGU_API_BASE=https://your-migu-api.example.com
+
+# AI 大模型配置
+VITE_LLM_API_KEY=your-api-key
+VITE_LLM_BASE_URL=https://open.bigmodel.cn/api/paas/v4
+VITE_LLM_MODEL=glm-4
+```
+
+---
+
+## 🏗️ 技术栈
+
+| 层级 | 技术 |
+|------|------|
+| 前端框架 | React + TypeScript + Vite |
+| 样式方案 | Tailwind CSS |
+| 状态管理 | Zustand |
+| 音频播放 | HTML5 Audio API |
+| 音乐源 | 网易云 / 咪咕 / B站（可扩展） |
+| AI 能力 | 智谱 AI / OpenAI 兼容接口 |
+| 项目类型 | 移动端 Web App / H5 |
+
+---
+
+## 📁 项目结构
+
+```
+huayu-music/
+├── src/
+│   ├── components/        # 通用组件
+│   │   ├── Player/        # 播放器组件
+│   │   ├── SongList/      # 歌曲列表组件
+│   │   └── TabBar/        # 底部导航
+│   ├── pages/             # 页面
+│   │   ├── Home/          # 首页
+│   │   ├── Discover/      # 发现页
+│   │   ├── Assistant/     # AI助手页
+│   │   ├── Library/       # 资料库
+│   │   └── Search/        # 搜索页
+│   ├── hooks/             # 自定义 hooks
+│   ├── utils/             # 工具函数
+│   ├── api/               # API 请求
+│   │   ├── netease/       # 网易云音乐 API
+│   │   ├── migu/          # 咪咕音乐 API
+│   │   └── llm/           # AI 大模型 API
+│   ├── store/             # 状态管理
+│   ├── styles/            # 全局样式
+│   └── App.tsx            # 应用入口
+├── public/                # 静态资源
+├── .env.example           # 环境变量示例
 ├── package.json
-├── .cozeproj                   # 预置脚手架脚本（禁止修改）
-└── .coze                       # 配置文件（禁止修改）
-
-## 样式方案
-
-基于 tailwindcss 进行样式开发（底层基于 Uniwind）
-
-写法示例：
-
-```tsx
-<View className="flex-1 bg-white dark:bg-gray-900 p-4"></View>
+├── vite.config.ts
+├── tsconfig.json
+├── tailwind.config.js
+└── README.md
 ```
 
-```tsx
-<Text
-  className="text-lg font-bold text-gray-900 dark:text-white"
-  selectionColorClassName="accent-blue-500"
->
-  Hello World
-</Text>
-```
+---
 
-Uniwind 官方文档：https://docs.uniwind.dev/llms.txt
+## 🎨 设计规范
 
-## 如何进行静态校验（TSC + ESLint）
+### 配色方案
 
-```bash
-# 对 client 和 server 目录同时进行校验
-pnpm -w lint:all
+| 颜色 | 色值 | 用途 |
+|------|------|------|
+| 米白 | `#FAF7F2` | 背景色 |
+| 鼠尾草绿 | `#7D8B6E` | 主色调 |
+| 玫瑰粉 | `#E8B4B8` | 点缀色 |
+| 暖棕 | `#8B7355` | 文字色 |
+| 浅粉 | `#F5E6E8` | 浅背景 |
+| 浅绿 | `#E8EDE3` | 浅背景 |
 
-# 对 client 目录进行校验
-pnpm -w lint:client
+### 设计理念
+- 🌿 自然治愈：像漫步在花园里的听歌体验
+- 🌸 浪漫精致：每一个细节都充满仪式感
+- ✨ 光影流动：金色星光粒子点缀，梦幻氛围拉满
 
-# 对 server 目录进行校验
-pnpm -w lint:server
-```
+---
 
-## 如何修改主题模式（跟随系统、固定暗色、固定亮色）
+## 🤝 参与贡献
 
-默认为跟随系统，如果用户明确指定为“暗色”或“亮色”，需要修改 `client/components/ColorSchemeUpdater.tsx` 的 `DEFAULT_THEME` 变量为合适的值
+欢迎各种形式的贡献！
 
-## 如何定制主题 design tokens
+- 🐛 发现 Bug？提个 [Issue]
+- 💡 有新想法？提个 [Feature Request]
+- 🔧 想写代码？欢迎提 [Pull Request]
 
-当前项目的**设计系统**基于 tailwindcss 实现，核心入口文件为 `client/global.css`，如果需要定制主题，应该**阅读并修改 `client/global.css` 文件**
+### 贡献指南
 
-## 路由及 Tab Bar 实现规范
+1. Fork 本仓库
+2. 创建你的特性分支 (`git checkout -b feature/AmazingFeature`)
+3. 提交你的改动 (`git commit -m 'Add some AmazingFeature'`)
+4. 推送到分支 (`git push origin feature/AmazingFeature`)
+5. 开启一个 Pull Request
 
-### 方案一：无 Tab Bar（Stack 导航）
+---
 
-适用于线性流程应用，采用简化的目录结构：
+## 📄 许可证
 
-```
-client/app/
-├── _layout.tsx         # 根布局（Stack 导航配置）
-├── index.tsx           # 应用入口
-├── detail.tsx          # 详情页（通过 params 传递数据）
-└── +not-found.tsx      # 404 页面
-```
+本项目采用 [MIT License](LICENSE) 许可证。
 
-**根布局配置** `client/app/_layout.tsx`：
+> ⚠️ 免责声明：本项目仅供学习交流使用，音乐版权归各平台所有。请支持正版音乐，勿用于商业用途。
 
-以下仅为代码片段供写法参考
+---
 
-```tsx
-<Stack screenOptions={{ headerShown: false }}>
-  <Stack.Screen name="index" />
-  <Stack.Screen name="detail" />
-</Stack>
-```
+## 🙏 致谢
 
-**应用入口** `client/app/index.tsx`：
-```tsx
-export { default } from "@/screens/home";
-```
-> **禁止事项**：无 Tab Bar 场景下，不得创建 `(tabs)` 目录。
+- [NeteaseCloudMusicApi](https://github.com/Binaryify/NeteaseCloudMusicApi) — 网易云音乐 API
+- 所有提供公共 API 服务的开发者们
+- 每一位为开源音乐生态做出贡献的人
 
-### 方案二：有 Tab Bar（Tabs 导航）
+---
 
-采用路由分组实现底部导航栏：
-```
-client/app/
-├── _layout.tsx              # 根布局
-├── (tabs)/
-│   ├── _layout.tsx          # Tab 导航配置
-│   ├── index.tsx            # 默认 Tab（必须存在）
-│   ├── discover.tsx         # 发现页
-│   └── profile.tsx          # 个人中心
-├── detail.tsx               # Tab 外的独立页面（通过 params 传递数据）
-└── +not-found.tsx
-```
-> **⚠️ [CRITICAL]**： `app/index.tsx` 优先级高于 `(tabs)/index.tsx`，会导致首页无 Tab Bar。**当有(tabs)/index.tsx时必须删除 `app/index.tsx`**。
-
-**根布局配置** `client/app/_layout.tsx`：
-
-以下仅为代码片段供写法参考
-
-```tsx
-<Stack screenOptions={{ headerShown: false }}>
-  <Stack.Screen name="(tabs)" />
-  <Stack.Screen name="detail" />
-</Stack>
-```
-
-**应用入口** `client/app/(tabs)/index.tsx`：
-```tsx
-export { default } from "@/screens/home";
-```
-
-**Tab 布局配置** `client/app/(tabs)/_layout.tsx`：
-
-```tsx
-import { Tabs } from 'expo-router';
-import { Platform } from 'react-native';
-import { useSafeAreaInsets } from 'react-native-safe-area-context';
-import { FontAwesome6 } from '@expo/vector-icons';
-import { useCSSVariable } from 'uniwind';
-
-export default function TabLayout() {
-  const insets = useSafeAreaInsets();
-  const [background, muted, accent, border] = useCSSVariable([
-    '--color-background',
-    '--color-muted',
-    '--color-accent',
-    '--color-border',
-  ]) as string[];
-
-  let tabBarStyle = {
-    backgroundColor: background,
-    borderTopWidth: 1,
-    borderTopColor: border,
-  };
-
-  // 用于修复 Web 上高度异常的问题（这个 if 逻辑必须添加）
-  if (Platform.OS === 'web') {
-    tabBarStyle = {
-      ...tabBarStyle,
-      height: 'auto',
-    }
-  }
-
-  return (
-    <Tabs
-      screenOptions={{
-        headerShown: false,
-        tabBarStyle,
-        tabBarActiveTintColor: accent,
-        tabBarInactiveTintColor: muted,
-      }}
-    >
-      {/* name 必须与文件名完全一致 */}
-      <Tabs.Screen
-        name="index"
-        options={{
-          title: '首页',
-          tabBarIcon: ({ color }) => (
-            <FontAwesome6 name="house" size={20} color={color} />
-          ),
-        }}
-      />
-      <Tabs.Screen
-        name="discover"
-        options={{
-          title: '发现',
-          tabBarIcon: ({ color }) => (
-            <FontAwesome6 name="compass" size={20} color={color} />
-          ),
-        }}
-      />
-      <Tabs.Screen
-        name="profile"
-        options={{
-          title: '我的',
-          tabBarIcon: ({ color }) => (
-            <FontAwesome6 name="user" size={20} color={color} />
-          ),
-        }}
-      />
-    </Tabs>
-  );
-}
-```
-
-**Tab 页面文件** `client/app/(tabs)/index.tsx`：
-```tsx
-export { default } from "@/screens/home";
-```
-
-### 注意事项
-
-在改动 `client/app/_layout.tsx` 前，必须先阅读该文件，再进行修改操作
-
-以下是需要保留的重要逻辑
-
-- 保留 global.css 引入（tailwindcss 生效的关键）
-- 保留 Provider 的使用
-
-## 依赖管理与模块导入规范
-
-### 依赖安装
-**禁止**使用 `npm` 或 `yarn`，按目录区分安装命令：
-
-| 目录 | 安装命令 | 说明 |
-|------|----------|------|
-| `client/` | `npx expo install <package>` | Expo 会自动选择与 SDK 兼容的版本 |
-| `server/` | `pnpm add <package>` | 使用 pnpm 管理后端依赖 |
-
-```bash
-# client 目录（Expo 项目）
-cd client && npx expo install expo-camera expo-image-picker
-
-# server 目录（Express 项目）
-cd server && pnpm add axios cors
-```
-
-**网络问题处理**：`npx expo install` 可能因网络原因失败，失败时重试 2 次，仍失败则改用 `pnpm add` 安装
-
-## Expo 开发规范
-
-### 路径别名
-
-Expo 配置了 `@/` 路径别名指向 `client/` 目录：
-
-```tsx
-// 正确
-import { Screen } from '@/components/Screen';
-
-// 避免相对路径
-import { Screen } from '../../../components/Screen';
-```
-
-## 本地开发
-
-`coze dev`：用来首次启动前后端服务，也可以用来重启前后端服务（该命令会先尝试杀掉占用端口的进程，再启动服务）
+<p align="center">
+  <sub>Made with 🌸 by 流星雨</sub>
+</p>
