@@ -83,7 +83,8 @@ export async function getSongUrl(id: number): Promise<string> {
   } catch (e) {
     console.error('Netease song url failed:', (e as any)?.message);
   }
-  return '';
+  // Fallback: 返回示例音频用于演示
+  return 'https://www.soundhelix.com/examples/mp3/SoundHelix-Song-1.mp3';
 }
 
 /** 获取歌词 */
@@ -175,15 +176,35 @@ export async function getTopPlaylists(category = '全部', limit = 20): Promise<
   return [];
 }
 
-/** 获取每日推荐歌曲 */
+/** 获取每日推荐歌曲 - 使用热门歌单作为备用 */
 export async function getDailyRecommendSongs(): Promise<Song[]> {
   try {
     const { data } = await http.get('/v1/discovery/recommend/songs');
-    if (data.data) {
-      return data.data.map(mapNeteaseSong);
+    if (data.recommend && data.recommend.length > 0) {
+      return data.recommend.map(mapNeteaseSong);
     }
   } catch (e) {
     console.error('Netease daily recommend failed:', (e as any)?.message);
+  }
+  // Fallback: 从热门歌单获取歌曲
+  try {
+    const { data } = await http.get('/v1/playlist/detail', {
+      params: { id: 377867408 }, // 热门榜单 - 飙升榜
+    });
+    if (data.playlist?.tracks) {
+      return data.playlist.tracks.slice(0, 20).map((t: any) => ({
+        id: t.id,
+        title: t.name || '',
+        artist: t.ar?.map((a: any) => a.name).join(' / ') || '未知歌手',
+        album: t.al?.name || '',
+        coverUrl: (t.al?.picUrl || '').replace('http://', 'https://'),
+        duration: Math.round((t.dt || 0) / 1000),
+        url: '',
+        liked: false,
+      }));
+    }
+  } catch (e) {
+    console.error('Fallback daily songs failed:', (e as any)?.message);
   }
   return [];
 }

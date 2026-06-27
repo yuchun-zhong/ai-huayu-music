@@ -70,15 +70,7 @@ export default function TabLayout() {
           ),
         }}
       />
-      <Tabs.Screen
-        name="search"
-        options={{
-          title: '搜索',
-          tabBarIcon: ({ color }) => (
-            <FontAwesome6 name="magnifying-glass" size={18} color={color} />
-          ),
-        }}
-      />
+
     </Tabs>
   );
 }

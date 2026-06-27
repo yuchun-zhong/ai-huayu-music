@@ -22,6 +22,10 @@ export default function RootLayout() {
         }}
       >
         <Stack.Screen name="(tabs)" options={{ title: "" }} />
+        <Stack.Screen name="search" options={{
+          title: "",
+          animation: 'slide_from_right',
+        }} />
         <Stack.Screen name="player" options={{
           title: "",
           animation: 'slide_from_bottom',

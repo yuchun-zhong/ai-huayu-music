@@ -6,7 +6,7 @@ export interface Song {
   id: number;
   title: string;
   artist: string;
-  artistId: number;
+  artistId?: number;
   album: string;
   albumId?: number;
   coverUrl: string;
@@ -270,17 +270,10 @@ export function PlayerProvider({ children }: { children: React.ReactNode }) {
 
   // Auto-load song when currentSong changes
   useEffect(() => {
-    if (state.currentSong && !state.songUrl) {
+    if (state.currentSong) {
       loadAndPlay(state.currentSong);
     }
-  }, [state.currentSong?.id]);
-
-  // When song changes, reset songUrl to trigger reload
-  useEffect(() => {
-    if (state.currentSong) {
-      setState(prev => ({ ...prev, songUrl: null }));
-    }
-  }, [state.currentSong?.id]);
+  }, [state.currentSong?.id, loadAndPlay]);
 
   const playSong = useCallback((song: Song, queue?: Song[]) => {
     const newQueue = queue || [song];
@@ -291,7 +284,6 @@ export function PlayerProvider({ children }: { children: React.ReactNode }) {
       queue: newQueue,
       queueIndex: index >= 0 ? index : 0,
       miniPlayerVisible: true,
-      songUrl: null, // trigger reload
     }));
   }, []);
 
