@@ -4,28 +4,15 @@
 
 ## 📱 界面预览
 
-<p align="center">
-  <img src="assets/screenshot-home.png" alt="首页" width="160" />
-  <img src="assets/screenshot-search.png" alt="搜索" width="160" />
-  <img src="assets/screenshot-discover.png" alt="发现" width="160" />
-  <img src="assets/screenshot-ai-assistant.png" alt="AI助手" width="160" />
-  <img src="assets/screenshot-profile.png" alt="我的" width="160" />
-</p>
-
-<p align="center">
-  <sub>首页 
-    &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; 
-    &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
-    &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; 
-    &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; 搜索 
-    &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; 
-    &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
-    &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; 
-    &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
-    &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; 发现 &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; 
-    &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; AI助手 &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; 
-    &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; 我的</sub>
-</p>
+<table align="center">
+  <tr>
+    <td align="center"><img src="assets/screenshot-home.png" alt="首页" width="150" /><br/><sub><b>首页</b></sub></td>
+    <td align="center"><img src="assets/screenshot-search.png" alt="搜索" width="150" /><br/><sub><b>搜索</b></sub></td>
+    <td align="center"><img src="assets/screenshot-discover.png" alt="发现" width="150" /><br/><sub><b>发现</b></sub></td>
+    <td align="center"><img src="assets/screenshot-ai-assistant.png" alt="AI助手" width="150" /><br/><sub><b>AI助手</b></sub></td>
+    <td align="center"><img src="assets/screenshot-profile.png" alt="我的" width="150" /><br/><sub><b>我的</b></sub></td>
+  </tr>
+</table>
 
 ---
 
