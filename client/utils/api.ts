@@ -1,34 +1,49 @@
 const BASE_URL = process.env.EXPO_PUBLIC_BACKEND_BASE_URL || 'http://localhost:9091';
 
+async function request<T = any>(path: string, options?: RequestInit): Promise<T> {
+  const res = await fetch(`${BASE_URL}/api/v1${path}`, {
+    ...options,
+    headers: {
+      'Content-Type': 'application/json',
+      ...options?.headers,
+    },
+  });
+  if (!res.ok) throw new Error(`HTTP ${res.status}`);
+  return res.json();
+}
+
 export const api = {
   // Songs
-  getSongs: () => fetch(`${BASE_URL}/api/v1/songs`).then(r => r.json()),
-  getHotSongs: () => fetch(`${BASE_URL}/api/v1/songs/hot`).then(r => r.json()),
-  getRecentSongs: () => fetch(`${BASE_URL}/api/v1/songs/recent`).then(r => r.json()),
-  getRecommendSongs: () => fetch(`${BASE_URL}/api/v1/songs/recommend`).then(r => r.json()),
-  getSongDetail: (id: number) => fetch(`${BASE_URL}/api/v1/songs/${id}`).then(r => r.json()),
-  toggleLikeSong: (id: number) =>
-    fetch(`${BASE_URL}/api/v1/songs/${id}/like`, { method: 'POST' }).then(r => r.json()),
-  getLikedSongs: () => fetch(`${BASE_URL}/api/v1/songs/liked/list`).then(r => r.json()),
+  getSongUrl: (id: number, br = 320000) =>
+    request(`/songs/${id}/url?br=${br}`),
+  getLyric: (id: number) =>
+    request(`/songs/${id}/lyric`),
+  getSongDetail: (ids: number[]) =>
+    request(`/songs/detail?ids=${ids.join(',')}`),
+  getDailySongs: () =>
+    request('/songs/daily'),
 
   // Playlists
-  getPlaylists: () => fetch(`${BASE_URL}/api/v1/playlists`).then(r => r.json()),
-  getRecommendPlaylists: () => fetch(`${BASE_URL}/api/v1/playlists/recommend`).then(r => r.json()),
-  getPlaylistDetail: (id: number) => fetch(`${BASE_URL}/api/v1/playlists/${id}`).then(r => r.json()),
-
-  // Radio
-  getRadioStations: () => fetch(`${BASE_URL}/api/v1/radio`).then(r => r.json()),
-  getRadioCategories: () => fetch(`${BASE_URL}/api/v1/radio/categories`).then(r => r.json()),
-  getRadioByCategory: (category: string) =>
-    fetch(`${BASE_URL}/api/v1/radio/category/${category}`).then(r => r.json()),
-  getPlayingRadio: () => fetch(`${BASE_URL}/api/v1/radio/playing`).then(r => r.json()),
+  getPersonalized: (limit = 10) =>
+    request(`/playlists/personalized?limit=${limit}`),
+  getTopPlaylists: (cat = '全部', limit = 20) =>
+    request(`/playlists/top?cat=${encodeURIComponent(cat)}&limit=${limit}`),
+  getHighQualityPlaylists: (cat = '全部', limit = 20) =>
+    request(`/playlists/highquality?cat=${encodeURIComponent(cat)}&limit=${limit}`),
+  getTopList: () =>
+    request('/playlists/toplist'),
+  getPlaylistDetail: (id: number) =>
+    request(`/playlists/${id}`),
 
   // Search
-  getHotKeywords: () => fetch(`${BASE_URL}/api/v1/search/hot`).then(r => r.json()),
-  search: (q: string, type?: string) =>
-    fetch(`${BASE_URL}/api/v1/search?q=${encodeURIComponent(q)}${type ? `&type=${type}` : ''}`).then(r => r.json()),
+  search: (q: string, type = 'songs', limit = 30, offset = 0) =>
+    request(`/search?q=${encodeURIComponent(q)}&type=${type}&limit=${limit}&offset=${offset}`),
+  getHotKeywords: () =>
+    request('/search/hot'),
 
   // Artists
-  getArtists: () => fetch(`${BASE_URL}/api/v1/artists`).then(r => r.json()),
-  getRecentArtists: () => fetch(`${BASE_URL}/api/v1/artists/recent`).then(r => r.json()),
+  getArtistDetail: (id: number) =>
+    request(`/artists/${id}`),
+  getArtistSongs: (id: number, limit = 50) =>
+    request(`/artists/${id}/songs?limit=${limit}`),
 };

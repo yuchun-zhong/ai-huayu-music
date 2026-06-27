@@ -1,110 +1,103 @@
 import React, { useState, useEffect } from 'react';
 import {
   View, Text, ScrollView, TouchableOpacity, StyleSheet,
-  FlatList,
+  Dimensions,
 } from 'react-native';
 import { Image } from 'expo-image';
 import { FontAwesome6 } from '@expo/vector-icons';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { Screen } from '@/components/Screen';
 import { MiniPlayer } from '@/components/MiniPlayer';
-import { type Song } from '@/contexts/PlayerContext';
+import { usePlayer, type Song } from '@/contexts/PlayerContext';
 import { api } from '@/utils/api';
 
-function PlaylistItem({ item }: { item: { id: number; title: string; coverUrl: string; songCount: number } }) {
-  return (
-    <TouchableOpacity style={playlistStyles.item} activeOpacity={0.7}>
-      <Image source={{ uri: item.coverUrl }} style={playlistStyles.cover} contentFit="cover" />
-      <View style={playlistStyles.info}>
-        <Text style={playlistStyles.title} numberOfLines={1}>{item.title}</Text>
-        <Text style={playlistStyles.count}>{item.songCount}首歌曲</Text>
-      </View>
-      <FontAwesome6 name="chevron-right" size={14} color="#C4B8A8" />
-    </TouchableOpacity>
-  );
-}
-
-function ArtistAvatar({ item }: { item: { id: number; name: string; avatarUrl: string } }) {
-  return (
-    <View style={artistStyles.container}>
-      <Image source={{ uri: item.avatarUrl }} style={artistStyles.avatar} contentFit="cover" />
-      <Text style={artistStyles.name} numberOfLines={1}>{item.name}</Text>
-    </View>
-  );
-}
+const { width: SCREEN_WIDTH } = Dimensions.get('window');
 
 export default function LibraryScreen() {
   const insets = useSafeAreaInsets();
-  const [likedSongs, setLikedSongs] = useState<Song[]>([]);
+  const { playSong } = usePlayer();
   const [playlists, setPlaylists] = useState<any[]>([]);
-  const [recentArtists, setRecentArtists] = useState<any[]>([]);
+  const [recentSongs, setRecentSongs] = useState<Song[]>([]);
 
   useEffect(() => {
-    api.getLikedSongs().then(res => setLikedSongs(res.data || []));
-    api.getPlaylists().then(res => setPlaylists(res.data || []));
-    api.getRecentArtists().then(res => setRecentArtists(res.data || []));
+    api.getHighQualityPlaylists('全部', 6).then(res => setPlaylists(res.data || [])).catch(() => {});
+    api.getDailySongs().then(res => setRecentSongs((res.data || []).slice(0, 6))).catch(() => {});
   }, []);
-
-  const myPlaylists = [
-    { id: 101, title: '我喜欢的音乐', coverUrl: 'https://images.unsplash.com/photo-1490750967868-88aa4f44baee?w=300&h=300&fit=crop', songCount: likedSongs.length },
-    { id: 102, title: '下载的歌曲', coverUrl: 'https://images.unsplash.com/photo-1504898770365-14faca6a7320?w=300&h=300&fit=crop', songCount: 12 },
-    ...playlists.slice(0, 3),
-  ];
 
   return (
     <Screen safeAreaEdges={['left', 'right']} backgroundColor="#FAF7F2">
       <ScrollView
         style={styles.scroll}
-        contentContainerStyle={[styles.scrollContent, { paddingTop: insets.top + 16 }]}
+        contentContainerStyle={[styles.content, { paddingTop: insets.top + 16 }]}
         showsVerticalScrollIndicator={false}
       >
         {/* Header */}
         <View style={styles.header}>
-          <Text style={styles.title}>资料库</Text>
+          <Text style={styles.headerTitle}>我的</Text>
+          <Text style={styles.headerSub}>你的音乐花园</Text>
         </View>
 
-        {/* Like & Download Cards */}
-        <View style={styles.topCards}>
-          <TouchableOpacity style={[styles.topCard, { backgroundColor: 'rgba(232,180,184,0.15)' }]}>
-            <View style={[styles.topCardIcon, { backgroundColor: 'rgba(232,180,184,0.3)' }]}>
-              <FontAwesome6 name="heart" size={22} color="#E8B4B8" />
+        {/* Quick Actions */}
+        <View style={styles.quickRow}>
+          <TouchableOpacity style={styles.quickCard}>
+            <View style={[styles.quickIcon, { backgroundColor: 'rgba(232,180,184,0.15)' }]}>
+              <FontAwesome6 name="heart" size={20} color="#E8B4B8" solid />
             </View>
-            <Text style={styles.topCardTitle}>我喜欢</Text>
-            <Text style={styles.topCardCount}>{likedSongs.length}首</Text>
+            <Text style={styles.quickLabel}>我喜欢</Text>
           </TouchableOpacity>
-          <TouchableOpacity style={[styles.topCard, { backgroundColor: 'rgba(125,139,110,0.1)' }]}>
-            <View style={[styles.topCardIcon, { backgroundColor: 'rgba(125,139,110,0.2)' }]}>
-              <FontAwesome6 name="download" size={22} color="#7D8B6E" />
+          <TouchableOpacity style={styles.quickCard}>
+            <View style={[styles.quickIcon, { backgroundColor: 'rgba(125,139,110,0.12)' }]}>
+              <FontAwesome6 name="download" size={20} color="#7D8B6E" />
             </View>
-            <Text style={styles.topCardTitle}>下载</Text>
-            <Text style={styles.topCardCount}>12首</Text>
+            <Text style={styles.quickLabel}>本地下载</Text>
+          </TouchableOpacity>
+          <TouchableOpacity style={styles.quickCard}>
+            <View style={[styles.quickIcon, { backgroundColor: 'rgba(201,169,110,0.12)' }]}>
+              <FontAwesome6 name="clock-rotate-left" size={20} color="#C9A96E" />
+            </View>
+            <Text style={styles.quickLabel}>最近播放</Text>
           </TouchableOpacity>
         </View>
 
-        {/* My Playlists */}
-        <View style={styles.section}>
-          <View style={styles.sectionHeader}>
-            <Text style={styles.sectionTitle}>我的歌单</Text>
-            <Text style={styles.sectionCount}>{myPlaylists.length}个</Text>
+        {/* Recent Songs */}
+        {recentSongs.length > 0 && (
+          <View style={styles.section}>
+            <View style={styles.sectionHeader}>
+              <Text style={styles.sectionTitle}>最近播放</Text>
+            </View>
+            {recentSongs.map((song) => (
+              <TouchableOpacity
+                key={song.id}
+                style={styles.songRow}
+                onPress={() => playSong(song, recentSongs)}
+                activeOpacity={0.7}
+              >
+                <Image source={{ uri: song.coverUrl }} style={styles.songCover} contentFit="cover" />
+                <View style={styles.songInfo}>
+                  <Text style={styles.songTitle} numberOfLines={1}>{song.title}</Text>
+                  <Text style={styles.songArtist} numberOfLines={1}>{song.artist}</Text>
+                </View>
+                <FontAwesome6 name="play-circle" size={20} color="#7D8B6E" />
+              </TouchableOpacity>
+            ))}
           </View>
-          {myPlaylists.map(pl => (
-            <PlaylistItem key={pl.id} item={pl} />
-          ))}
-        </View>
+        )}
 
-        {/* Recent Artists */}
+        {/* Featured Playlists */}
         <View style={[styles.section, { marginBottom: 100 }]}>
           <View style={styles.sectionHeader}>
-            <Text style={styles.sectionTitle}>最近播放的歌手</Text>
+            <Text style={styles.sectionTitle}>精选歌单</Text>
           </View>
-          <FlatList
-            data={recentArtists}
-            horizontal
-            showsHorizontalScrollIndicator={false}
-            contentContainerStyle={styles.artistList}
-            keyExtractor={(item) => String(item.id)}
-            renderItem={({ item }) => <ArtistAvatar item={item} />}
-          />
+          <View style={styles.playlistGrid}>
+            {playlists.map(pl => (
+              <TouchableOpacity key={pl.id} style={styles.playlistCard} activeOpacity={0.8}>
+                <Image source={{ uri: pl.coverUrl }} style={styles.playlistCover} contentFit="cover" />
+                <View style={styles.playlistOverlay}>
+                  <Text style={styles.playlistTitle} numberOfLines={2}>{pl.title}</Text>
+                </View>
+              </TouchableOpacity>
+            ))}
+          </View>
         </View>
       </ScrollView>
 
@@ -115,58 +108,46 @@ export default function LibraryScreen() {
 
 const styles = StyleSheet.create({
   scroll: { flex: 1 },
-  scrollContent: { paddingBottom: 20 },
-  header: { paddingHorizontal: 20, marginBottom: 16 },
-  title: { fontSize: 28, fontWeight: '700', color: '#3A3530' },
-  topCards: {
-    flexDirection: 'row',
-    paddingHorizontal: 20,
-    gap: 12,
+  content: { paddingBottom: 20 },
+  header: { paddingHorizontal: 20, marginBottom: 20 },
+  headerTitle: { fontSize: 24, fontWeight: '700', color: '#3A3530' },
+  headerSub: { fontSize: 13, color: '#8B7D6B', marginTop: 4 },
+  quickRow: {
+    flexDirection: 'row', justifyContent: 'space-around',
+    paddingHorizontal: 20, marginBottom: 24,
   },
-  topCard: {
-    flex: 1,
-    borderRadius: 20,
-    padding: 16,
-    alignItems: 'center',
+  quickCard: { alignItems: 'center', gap: 8 },
+  quickIcon: {
+    width: 52, height: 52, borderRadius: 16,
+    alignItems: 'center', justifyContent: 'center',
   },
-  topCardIcon: {
-    width: 48,
-    height: 48,
-    borderRadius: 24,
-    alignItems: 'center',
-    justifyContent: 'center',
-    marginBottom: 10,
-  },
-  topCardTitle: { fontSize: 15, fontWeight: '600', color: '#3A3530' },
-  topCardCount: { fontSize: 12, color: '#8B7D6B', marginTop: 4 },
-  section: { marginTop: 24 },
+  quickLabel: { fontSize: 12, color: '#5A5349', fontWeight: '500' },
+  section: { marginBottom: 24 },
   sectionHeader: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'center',
-    paddingHorizontal: 20,
-    marginBottom: 12,
+    paddingHorizontal: 20, marginBottom: 12,
   },
-  sectionTitle: { fontSize: 18, fontWeight: '700', color: '#3A3530' },
-  sectionCount: { fontSize: 13, color: '#8B7D6B' },
-  artistList: { paddingHorizontal: 20, gap: 16 },
-});
-
-const playlistStyles = StyleSheet.create({
-  item: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    paddingHorizontal: 20,
-    paddingVertical: 10,
+  sectionTitle: { fontSize: 17, fontWeight: '600', color: '#3A3530' },
+  songRow: {
+    flexDirection: 'row', alignItems: 'center', gap: 12,
+    paddingHorizontal: 20, paddingVertical: 8,
   },
-  cover: { width: 48, height: 48, borderRadius: 12 },
-  info: { flex: 1, marginLeft: 12 },
-  title: { fontSize: 15, fontWeight: '500', color: '#3A3530' },
-  count: { fontSize: 12, color: '#8B7D6B', marginTop: 3 },
-});
-
-const artistStyles = StyleSheet.create({
-  container: { alignItems: 'center', width: 64 },
-  avatar: { width: 56, height: 56, borderRadius: 28 },
-  name: { fontSize: 11, color: '#3A3530', marginTop: 6, textAlign: 'center' },
+  songCover: { width: 44, height: 44, borderRadius: 10 },
+  songInfo: { flex: 1, gap: 2 },
+  songTitle: { fontSize: 14, fontWeight: '500', color: '#3A3530' },
+  songArtist: { fontSize: 12, color: '#8B7D6B' },
+  playlistGrid: {
+    flexDirection: 'row', flexWrap: 'wrap',
+    paddingHorizontal: 16, gap: 12,
+  },
+  playlistCard: {
+    width: (SCREEN_WIDTH - 56) / 2,
+    borderRadius: 16, overflow: 'hidden',
+  },
+  playlistCover: { width: '100%', aspectRatio: 1 },
+  playlistOverlay: {
+    position: 'absolute', bottom: 0, left: 0, right: 0,
+    padding: 10,
+    backgroundColor: 'rgba(0,0,0,0.3)',
+  },
+  playlistTitle: { fontSize: 12, color: '#fff', fontWeight: '500', lineHeight: 16 },
 });

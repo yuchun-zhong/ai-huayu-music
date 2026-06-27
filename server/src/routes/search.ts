@@ -1,47 +1,75 @@
 import { Router } from 'express';
-import { songs, playlists, artists, hotSearchKeywords } from '../data/music.js';
+import * as netease from '../services/netease.js';
 
-export const searchRouter = Router();
+const router = Router();
 
-// GET /api/v1/search/hot - 热门搜索关键词
-searchRouter.get('/hot', (req, res) => {
-  res.json({ data: hotSearchKeywords });
+/**
+ * 综合搜索
+ * GET /api/v1/search?q=keyword&type=song&limit=30&offset=0
+ * type: song | artist | playlist | album
+ */
+router.get('/', async (req, res) => {
+  try {
+    const { q, type = 'song', limit = '30', offset = '0' } = req.query;
+    if (!q) {
+      res.json({ code: 200, data: { songs: [], artists: [], playlists: [] } });
+      return;
+    }
+
+    const keyword = q as string;
+    const limitNum = parseInt(limit as string);
+    const offsetNum = parseInt(offset as string);
+
+    if (type === 'song') {
+      const songs = await netease.searchSongs(keyword, limitNum, offsetNum);
+      res.json({ code: 200, data: { songs } });
+    } else if (type === 'artist') {
+      const artists = await netease.searchArtists(keyword, limitNum);
+      res.json({ code: 200, data: { artists } });
+    } else if (type === 'playlist') {
+      const playlists = await netease.searchPlaylists(keyword, limitNum);
+      res.json({ code: 200, data: { playlists } });
+    } else {
+      // 综合搜索
+      const [songs, artists, playlists] = await Promise.all([
+        netease.searchSongs(keyword, 10),
+        netease.searchArtists(keyword, 5),
+        netease.searchPlaylists(keyword, 5),
+      ]);
+      res.json({ code: 200, data: { songs, artists, playlists } });
+    }
+  } catch (error: any) {
+    res.status(500).json({ code: 500, message: error.message });
+  }
 });
 
-// GET /api/v1/search?q=xxx&type=song|artist|playlist|album - 搜索
-searchRouter.get('/', (req, res) => {
-  const { q, type = 'song' } = req.query;
-  const query = String(q || '').toLowerCase();
-
-  if (!query) {
-    res.json({ data: { songs: [], artists: [], playlists: [] } });
-    return;
+/**
+ * 热门搜索关键词
+ * GET /api/v1/search/hot
+ */
+router.get('/hot', async (req, res) => {
+  try {
+    // 网易云热搜
+    const { data } = await (await import('axios')).default.get(
+      'https://music.163.com/api/search/hot',
+      {
+        headers: {
+          'User-Agent': 'Mozilla/5.0',
+          'Referer': 'https://music.163.com',
+        },
+      }
+    );
+    const keywords = data.result?.hots?.map((h: any) => h.first) || [
+      '周杰伦', '林俊杰', '陈奕迅', '薛之谦', '邓紫棋',
+      '毛不易', '李荣浩', '华晨宇', '王菲', 'Taylor Swift',
+    ];
+    res.json({ code: 200, data: keywords });
+  } catch {
+    res.json({
+      code: 200,
+      data: ['周杰伦', '林俊杰', '陈奕迅', '薛之谦', '邓紫棋', '毛不易', '李荣浩', '华晨宇', '王菲', 'Taylor Swift'],
+    });
   }
-
-  const matchedSongs = songs.filter(
-    s => s.title.toLowerCase().includes(query) ||
-         s.artist.toLowerCase().includes(query) ||
-         s.album.toLowerCase().includes(query)
-  );
-
-  const matchedArtists = artists.filter(
-    a => a.name.toLowerCase().includes(query)
-  );
-
-  const matchedPlaylists = playlists.filter(
-    p => p.title.toLowerCase().includes(query) ||
-         p.description.toLowerCase().includes(query)
-  );
-
-  const result: Record<string, unknown> = {};
-  if (type === 'song') result.songs = matchedSongs;
-  else if (type === 'artist') result.artists = matchedArtists;
-  else if (type === 'playlist') result.playlists = matchedPlaylists;
-  else {
-    result.songs = matchedSongs;
-    result.artists = matchedArtists;
-    result.playlists = matchedPlaylists;
-  }
-
-  res.json({ data: result });
 });
+
+export default router;

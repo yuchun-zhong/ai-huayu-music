@@ -1,42 +1,70 @@
 import { Tabs } from 'expo-router';
-import { Platform, StyleSheet } from 'react-native';
+import { Platform } from 'react-native';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { FontAwesome6 } from '@expo/vector-icons';
-import { LinearGradient } from 'expo-linear-gradient';
+import { useCSSVariable } from 'uniwind';
 
 export default function TabLayout() {
+  const insets = useSafeAreaInsets();
+  const [background, muted, accent, border] = useCSSVariable([
+    '--color-background',
+    '--color-muted',
+    '--color-accent',
+    '--color-border',
+  ]) as string[];
+
+  let tabBarStyle = {
+    backgroundColor: 'rgba(250,247,242,0.92)',
+    borderTopWidth: 0,
+    height: 60 + insets.bottom,
+    paddingTop: 8,
+  };
+
+  if (Platform.OS === 'web') {
+    tabBarStyle = {
+      ...tabBarStyle,
+      height: 'auto' as any,
+    };
+  }
+
   return (
     <Tabs
       screenOptions={{
         headerShown: false,
-        tabBarStyle: styles.tabBar,
-        tabBarBackground: () => (
-          <LinearGradient
-            colors={['rgba(250,247,242,0.95)', 'rgba(232,180,184,0.12)', 'rgba(125,139,110,0.08)']}
-            start={{ x: 0, y: 0 }}
-            end={{ x: 1, y: 1 }}
-            style={StyleSheet.absoluteFill}
-          />
-        ),
+        tabBarStyle,
         tabBarActiveTintColor: '#7D8B6E',
         tabBarInactiveTintColor: '#C4B8A8',
-        tabBarLabelStyle: styles.tabLabel,
+        tabBarLabelStyle: {
+          fontSize: 10,
+          fontWeight: '500',
+          marginBottom: 2,
+        },
       }}
     >
       <Tabs.Screen
         name="index"
         options={{
           title: '首页',
-          tabBarIcon: ({ color, size }) => (
-            <FontAwesome6 name="house" size={size} color={color} />
+          tabBarIcon: ({ color }) => (
+            <FontAwesome6 name="house" size={18} color={color} />
           ),
         }}
       />
       <Tabs.Screen
-        name="radio"
+        name="discover"
         options={{
-          title: '广播',
-          tabBarIcon: ({ color, size }) => (
-            <FontAwesome6 name="radio" size={size} color={color} />
+          title: '发现',
+          tabBarIcon: ({ color }) => (
+            <FontAwesome6 name="compass" size={18} color={color} />
+          ),
+        }}
+      />
+      <Tabs.Screen
+        name="ai-assistant"
+        options={{
+          title: 'AI助手',
+          tabBarIcon: ({ color }) => (
+            <FontAwesome6 name="leaf" size={18} color={color} />
           ),
         }}
       />
@@ -44,8 +72,8 @@ export default function TabLayout() {
         name="library"
         options={{
           title: '资料库',
-          tabBarIcon: ({ color, size }) => (
-            <FontAwesome6 name="compact-disc" size={size} color={color} />
+          tabBarIcon: ({ color }) => (
+            <FontAwesome6 name="record-vinyl" size={18} color={color} />
           ),
         }}
       />
@@ -53,30 +81,11 @@ export default function TabLayout() {
         name="search"
         options={{
           title: '搜索',
-          tabBarIcon: ({ color, size }) => (
-            <FontAwesome6 name="magnifying-glass" size={size} color={color} />
+          tabBarIcon: ({ color }) => (
+            <FontAwesome6 name="magnifying-glass" size={18} color={color} />
           ),
         }}
       />
     </Tabs>
   );
 }
-
-const styles = StyleSheet.create({
-  tabBar: {
-    borderTopWidth: 0,
-    shadowColor: '#7D8B6E',
-    shadowOffset: { width: 0, height: -2 },
-    shadowOpacity: 0.08,
-    shadowRadius: 12,
-    elevation: 8,
-    height: 70,
-    paddingTop: 8,
-    ...(Platform.OS === 'web' ? { height: 'auto' as any } : {}),
-  },
-  tabLabel: {
-    fontSize: 11,
-    fontWeight: '500',
-    marginTop: 2,
-  },
-});

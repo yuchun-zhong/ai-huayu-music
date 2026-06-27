@@ -1,109 +1,184 @@
 import React, { useState, useCallback } from 'react';
 import {
   View, Text, ScrollView, TouchableOpacity, StyleSheet,
-  TextInput, FlatList,
+  TextInput, Dimensions,
 } from 'react-native';
 import { Image } from 'expo-image';
 import { FontAwesome6 } from '@expo/vector-icons';
+
+const { width: SCREEN_WIDTH } = Dimensions.get('window');
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { Screen } from '@/components/Screen';
 import { MiniPlayer } from '@/components/MiniPlayer';
 import { usePlayer, type Song } from '@/contexts/PlayerContext';
 import { api } from '@/utils/api';
 
-type SearchType = 'all' | 'song' | 'artist' | 'playlist';
+type TabType = 'songs' | 'artists' | 'playlists';
+
+function SongItem({ song, index, onPress }: { song: Song; index: number; onPress: () => void }) {
+  return (
+    <TouchableOpacity style={songStyles.row} onPress={onPress} activeOpacity={0.7}>
+      <Image source={{ uri: song.coverUrl }} style={songStyles.cover} contentFit="cover" />
+      <View style={songStyles.info}>
+        <Text style={songStyles.title} numberOfLines={1}>{song.title}</Text>
+        <Text style={songStyles.artist} numberOfLines={1}>{song.artist} · {song.album}</Text>
+      </View>
+      <FontAwesome6 name="play-circle" size={22} color="#7D8B6E" />
+    </TouchableOpacity>
+  );
+}
 
 export default function SearchScreen() {
   const insets = useSafeAreaInsets();
   const { playSong } = usePlayer();
   const [query, setQuery] = useState('');
-  const [hotKeywords, setHotKeywords] = useState<string[]>([]);
-  const [searchHistory, setSearchHistory] = useState<string[]>(['民谣', '陈粒', '治愈系']);
-  const [searchResults, setSearchResults] = useState<any>(null);
-  const [searchType, setSearchType] = useState<SearchType>('all');
-  const [isSearching, setIsSearching] = useState(false);
+  const [activeTab, setActiveTab] = useState<TabType>('songs');
+  const [songs, setSongs] = useState<Song[]>([]);
+  const [artists, setArtists] = useState<any[]>([]);
+  const [playlists, setPlaylists] = useState<any[]>([]);
+  const [hotKeywords, setHotKeywords] = useState<{ keyword: string }[]>([]);
+  const [searchHistory, setSearchHistory] = useState<string[]>([]);
+  const [hasSearched, setHasSearched] = useState(false);
+  const [isLoading, setIsLoading] = useState(false);
 
+  // Load hot keywords on mount
   React.useEffect(() => {
-    api.getHotKeywords().then(res => setHotKeywords(res.data || []));
+    api.getHotKeywords().then(res => setHotKeywords(res.data || [])).catch(() => {});
   }, []);
 
-  const handleSearch = useCallback(async (keyword?: string) => {
-    const q = keyword || query;
-    if (!q.trim()) return;
-    if (keyword) setQuery(keyword);
-    setIsSearching(true);
-    try {
-      const typeParam = searchType === 'all' ? undefined : searchType;
-      const res = await api.search(q, typeParam);
-      setSearchResults(res.data);
-      // Add to history
-      setSearchHistory(prev => {
-        const filtered = prev.filter(k => k !== q);
-        return [q, ...filtered].slice(0, 10);
-      });
-    } finally {
-      setIsSearching(false);
-    }
-  }, [query, searchType]);
+  const doSearch = useCallback(async (keyword: string) => {
+    if (!keyword.trim()) return;
+    setQuery(keyword.trim());
+    setIsLoading(true);
+    setHasSearched(true);
 
-  const searchTypes: { key: SearchType; label: string }[] = [
-    { key: 'all', label: '综合' },
-    { key: 'song', label: '歌曲' },
-    { key: 'artist', label: '歌手' },
-    { key: 'playlist', label: '歌单' },
+    // Add to history
+    setSearchHistory(prev => {
+      const filtered = prev.filter(h => h !== keyword.trim());
+      return [keyword.trim(), ...filtered].slice(0, 10);
+    });
+
+    try {
+      // Search all types
+      const [songsRes, artistsRes, playlistsRes] = await Promise.all([
+        api.search(keyword, 'songs', 30),
+        api.search(keyword, 'artists', 10),
+        api.search(keyword, 'playlists', 10),
+      ]);
+      setSongs(songsRes.data?.songs || []);
+      setArtists(artistsRes.data?.artists || []);
+      setPlaylists(playlistsRes.data?.playlists || []);
+    } catch {
+      // ignore
+    } finally {
+      setIsLoading(false);
+    }
+  }, []);
+
+  const handlePlaySong = useCallback((song: Song, queue: Song[]) => {
+    playSong(song, queue);
+  }, [playSong]);
+
+  const tabs: { key: TabType; label: string }[] = [
+    { key: 'songs', label: '歌曲' },
+    { key: 'artists', label: '歌手' },
+    { key: 'playlists', label: '歌单' },
   ];
 
-  const renderSongResult = (song: Song, idx: number) => (
-    <TouchableOpacity
-      key={song.id}
-      style={resultStyles.songRow}
-      onPress={() => playSong(song, searchResults?.songs || [])}
-      activeOpacity={0.7}
-    >
-      <Image source={{ uri: song.coverUrl }} style={resultStyles.songCover} contentFit="cover" />
-      <View style={resultStyles.songInfo}>
-        <Text style={resultStyles.songTitle} numberOfLines={1}>{song.title}</Text>
-        <Text style={resultStyles.songArtist} numberOfLines={1}>{song.artist} - {song.album}</Text>
-      </View>
-    </TouchableOpacity>
-  );
+  const renderContent = () => {
+    if (isLoading) {
+      return (
+        <View style={resultStyles.loading}>
+          <Text style={resultStyles.loadingText}>搜索中...</Text>
+        </View>
+      );
+    }
 
-  const showResults = query.length > 0 && searchResults;
+    if (activeTab === 'songs') {
+      return (
+        <View>
+          {songs.map((song, idx) => (
+            <SongItem
+              key={song.id}
+              song={song}
+              index={idx}
+              onPress={() => handlePlaySong(song, songs)}
+            />
+          ))}
+          {songs.length === 0 && hasSearched && (
+            <Text style={resultStyles.empty}>没有找到相关歌曲</Text>
+          )}
+        </View>
+      );
+    }
+
+    if (activeTab === 'artists') {
+      return (
+        <View style={resultStyles.artistGrid}>
+          {artists.map(a => (
+            <View key={a.id} style={resultStyles.artistCard}>
+              <Image source={{ uri: a.coverUrl }} style={resultStyles.artistCover} contentFit="cover" />
+              <Text style={resultStyles.artistName} numberOfLines={1}>{a.name}</Text>
+            </View>
+          ))}
+          {artists.length === 0 && hasSearched && (
+            <Text style={resultStyles.empty}>没有找到相关歌手</Text>
+          )}
+        </View>
+      );
+    }
+
+    if (activeTab === 'playlists') {
+      return (
+        <View>
+          {playlists.map(pl => (
+            <TouchableOpacity key={pl.id} style={resultStyles.playlistRow} activeOpacity={0.7}>
+              <Image source={{ uri: pl.coverUrl }} style={resultStyles.playlistCover} contentFit="cover" />
+              <View style={resultStyles.playlistInfo}>
+                <Text style={resultStyles.playlistTitle} numberOfLines={1}>{pl.title}</Text>
+                <Text style={resultStyles.playlistMeta}>{pl.trackCount}首 · {pl.playCount > 10000 ? `${(pl.playCount / 10000).toFixed(1)}万` : pl.playCount}次播放</Text>
+              </View>
+            </TouchableOpacity>
+          ))}
+          {playlists.length === 0 && hasSearched && (
+            <Text style={resultStyles.empty}>没有找到相关歌单</Text>
+          )}
+        </View>
+      );
+    }
+
+    return null;
+  };
 
   return (
     <Screen safeAreaEdges={['left', 'right']} backgroundColor="#FAF7F2">
       <ScrollView
         style={styles.scroll}
-        contentContainerStyle={[styles.scrollContent, { paddingTop: insets.top + 16 }]}
+        contentContainerStyle={[styles.content, { paddingTop: insets.top + 16 }]}
         showsVerticalScrollIndicator={false}
         keyboardShouldPersistTaps="handled"
       >
         {/* Search Bar */}
-        <View style={styles.searchContainer}>
-          <TouchableOpacity style={styles.backBtn}>
-            <FontAwesome6 name="arrow-left" size={18} color="#3A3530" />
-          </TouchableOpacity>
-          <View style={styles.searchBar}>
-            <FontAwesome6 name="magnifying-glass" size={14} color="#8B7D6B" />
-            <TextInput
-              style={styles.searchInput}
-              placeholder="搜索歌曲、歌手、歌单"
-              placeholderTextColor="#8B7D6B"
-              value={query}
-              onChangeText={setQuery}
-              onSubmitEditing={() => handleSearch()}
-              returnKeyType="search"
-              autoFocus
-            />
-            {query.length > 0 && (
-              <TouchableOpacity onPress={() => { setQuery(''); setSearchResults(null); }}>
-                <FontAwesome6 name="xmark" size={14} color="#8B7D6B" />
-              </TouchableOpacity>
-            )}
-          </View>
+        <View style={styles.searchBar}>
+          <FontAwesome6 name="magnifying-glass" size={14} color="#8B7D6B" />
+          <TextInput
+            style={styles.searchInput}
+            value={query}
+            onChangeText={setQuery}
+            placeholder="搜索歌曲、歌手、歌单"
+            placeholderTextColor="#8B7D6B"
+            returnKeyType="search"
+            onSubmitEditing={() => doSearch(query)}
+            autoFocus
+          />
+          {query.length > 0 && (
+            <TouchableOpacity onPress={() => { setQuery(''); setHasSearched(false); }}>
+              <FontAwesome6 name="xmark" size={14} color="#8B7D6B" />
+            </TouchableOpacity>
+          )}
         </View>
 
-        {!showResults ? (
+        {!hasSearched ? (
           <>
             {/* Search History */}
             {searchHistory.length > 0 && (
@@ -111,80 +186,61 @@ export default function SearchScreen() {
                 <View style={styles.sectionHeader}>
                   <Text style={styles.sectionTitle}>搜索历史</Text>
                   <TouchableOpacity onPress={() => setSearchHistory([])}>
-                    <FontAwesome6 name="trash" size={14} color="#8B7D6B" />
+                    <FontAwesome6 name="trash" size={12} color="#8B7D6B" />
                   </TouchableOpacity>
                 </View>
-                <View style={styles.tagList}>
-                  {searchHistory.map(kw => (
-                    <TouchableOpacity
-                      key={kw}
-                      style={styles.tag}
-                      onPress={() => handleSearch(kw)}
-                    >
-                      <Text style={styles.tagText}>{kw}</Text>
+                <View style={styles.tagWrap}>
+                  {searchHistory.map(h => (
+                    <TouchableOpacity key={h} style={styles.tag} onPress={() => doSearch(h)}>
+                      <Text style={styles.tagText}>{h}</Text>
                     </TouchableOpacity>
                   ))}
                 </View>
               </View>
             )}
 
-            {/* Hot Search */}
+            {/* Hot Keywords */}
             <View style={styles.section}>
               <View style={styles.sectionHeader}>
                 <Text style={styles.sectionTitle}>热门搜索</Text>
               </View>
-              {hotKeywords.map((kw, idx) => (
-                <TouchableOpacity
-                  key={kw}
-                  style={styles.hotRow}
-                  onPress={() => handleSearch(kw)}
-                >
-                  <Text style={[styles.hotRank, idx < 3 && styles.hotRankTop]}>{idx + 1}</Text>
-                  <Text style={styles.hotKeyword}>{kw}</Text>
-                </TouchableOpacity>
-              ))}
+              <View style={styles.hotList}>
+                {hotKeywords.map((item, idx) => (
+                  <TouchableOpacity
+                    key={item.keyword}
+                    style={styles.hotRow}
+                    onPress={() => doSearch(item.keyword)}
+                  >
+                    <Text style={[styles.hotRank, idx < 3 && styles.hotRankTop]}>{idx + 1}</Text>
+                    <Text style={styles.hotKeyword}>{item.keyword.trim()}</Text>
+                  </TouchableOpacity>
+                ))}
+              </View>
             </View>
           </>
         ) : (
           <>
-            {/* Search Type Tabs */}
-            <View style={styles.typeTabs}>
-              {searchTypes.map(t => (
+            {/* Tabs */}
+            <View style={styles.tabs}>
+              {tabs.map(tab => (
                 <TouchableOpacity
-                  key={t.key}
-                  style={[styles.typeTab, searchType === t.key && styles.typeTabActive]}
-                  onPress={() => { setSearchType(t.key); handleSearch(); }}
+                  key={tab.key}
+                  style={[styles.tab, activeTab === tab.key && styles.tabActive]}
+                  onPress={() => setActiveTab(tab.key)}
                 >
-                  <Text style={[styles.typeTabText, searchType === t.key && styles.typeTabTextActive]}>
-                    {t.label}
+                  <Text style={[styles.tabText, activeTab === tab.key && styles.tabTextActive]}>
+                    {tab.label}
+                    {tab.key === 'songs' && songs.length > 0 ? ` (${songs.length})` : ''}
+                    {tab.key === 'artists' && artists.length > 0 ? ` (${artists.length})` : ''}
+                    {tab.key === 'playlists' && playlists.length > 0 ? ` (${playlists.length})` : ''}
                   </Text>
                 </TouchableOpacity>
               ))}
             </View>
 
             {/* Results */}
-            <View style={{ marginTop: 12, marginBottom: 100 }}>
-              {searchResults.songs && searchResults.songs.length > 0 && (
-                <View>
-                  {searchResults.songs.map((song: Song, idx: number) => renderSongResult(song, idx))}
-                </View>
-              )}
-              {searchResults.artists && searchResults.artists.length > 0 && (
-                <View style={{ paddingHorizontal: 20 }}>
-                  {searchResults.artists.map((artist: any) => (
-                    <View key={artist.id} style={resultStyles.artistRow}>
-                      <Image source={{ uri: artist.avatarUrl }} style={resultStyles.artistAvatar} contentFit="cover" />
-                      <Text style={resultStyles.artistName}>{artist.name}</Text>
-                    </View>
-                  ))}
-                </View>
-              )}
-              {(!searchResults.songs?.length && !searchResults.artists?.length && !searchResults.playlists?.length) && (
-                <View style={styles.empty}>
-                  <FontAwesome6 name="music" size={40} color="#C4B8A8" />
-                  <Text style={styles.emptyText}>没有找到相关内容</Text>
-                </View>
-              )}
+            <View style={{ marginBottom: 100 }}>
+              {renderContent()}
             </View>
           </>
         )}
@@ -197,86 +253,81 @@ export default function SearchScreen() {
 
 const styles = StyleSheet.create({
   scroll: { flex: 1 },
-  scrollContent: { paddingBottom: 20 },
-  searchContainer: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    paddingHorizontal: 16,
-    gap: 10,
-    marginBottom: 16,
-  },
-  backBtn: { padding: 4 },
+  content: { paddingBottom: 20 },
   searchBar: {
-    flex: 1,
-    flexDirection: 'row',
-    alignItems: 'center',
-    backgroundColor: 'rgba(255,255,255,0.85)',
-    borderRadius: 24,
-    paddingHorizontal: 14,
-    paddingVertical: 10,
-    gap: 8,
+    flexDirection: 'row', alignItems: 'center', gap: 8,
+    marginHorizontal: 20, marginBottom: 20,
+    backgroundColor: 'rgba(125,139,110,0.08)',
+    borderRadius: 24, paddingHorizontal: 16, paddingVertical: 10,
   },
-  searchInput: { flex: 1, fontSize: 14, color: '#3A3530', padding: 0 },
-  section: { marginTop: 20, paddingHorizontal: 20 },
+  searchInput: { flex: 1, fontSize: 14, color: '#3A3530' },
+  section: { marginBottom: 24, paddingHorizontal: 20 },
   sectionHeader: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'center',
+    flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center',
     marginBottom: 12,
   },
-  sectionTitle: { fontSize: 16, fontWeight: '700', color: '#3A3530' },
-  tagList: { flexDirection: 'row', flexWrap: 'wrap', gap: 8 },
+  sectionTitle: { fontSize: 15, fontWeight: '600', color: '#3A3530' },
+  tagWrap: { flexDirection: 'row', flexWrap: 'wrap', gap: 8 },
   tag: {
-    paddingHorizontal: 14,
-    paddingVertical: 8,
-    borderRadius: 16,
-    backgroundColor: 'rgba(255,255,255,0.85)',
+    backgroundColor: 'rgba(125,139,110,0.08)',
+    borderRadius: 16, paddingVertical: 6, paddingHorizontal: 14,
   },
-  tagText: { fontSize: 13, color: '#3A3530' },
+  tagText: { fontSize: 13, color: '#5A5349' },
+  hotList: { gap: 4 },
   hotRow: {
-    flexDirection: 'row',
-    alignItems: 'center',
+    flexDirection: 'row', alignItems: 'center', gap: 12,
     paddingVertical: 10,
-    gap: 12,
   },
-  hotRank: { width: 24, fontSize: 15, fontWeight: '700', color: '#C4B8A8', textAlign: 'center' },
-  hotRankTop: { color: '#C9A96E' },
-  hotKeyword: { fontSize: 15, color: '#3A3530' },
-  typeTabs: {
-    flexDirection: 'row',
-    paddingHorizontal: 20,
-    gap: 8,
-    marginTop: 8,
+  hotRank: { fontSize: 14, fontWeight: '700', color: '#C4B8A8', width: 24, textAlign: 'center' },
+  hotRankTop: { color: '#E8B4B8' },
+  hotKeyword: { fontSize: 14, color: '#3A3530' },
+  tabs: {
+    flexDirection: 'row', paddingHorizontal: 20, gap: 4, marginBottom: 16,
   },
-  typeTab: {
-    paddingHorizontal: 16,
-    paddingVertical: 8,
-    borderRadius: 16,
-    backgroundColor: 'rgba(255,255,255,0.85)',
+  tab: {
+    paddingVertical: 8, paddingHorizontal: 16,
+    borderRadius: 20,
   },
-  typeTabActive: { backgroundColor: '#7D8B6E' },
-  typeTabText: { fontSize: 13, color: '#3A3530', fontWeight: '500' },
-  typeTabTextActive: { color: '#fff' },
-  empty: { alignItems: 'center', paddingTop: 60, gap: 12 },
-  emptyText: { fontSize: 14, color: '#8B7D6B' },
+  tabActive: { backgroundColor: '#7D8B6E' },
+  tabText: { fontSize: 13, color: '#5A5349', fontWeight: '500' },
+  tabTextActive: { color: '#fff' },
+});
+
+const songStyles = StyleSheet.create({
+  row: {
+    flexDirection: 'row', alignItems: 'center', gap: 12,
+    paddingHorizontal: 20, paddingVertical: 8,
+  },
+  cover: { width: 44, height: 44, borderRadius: 10 },
+  info: { flex: 1, gap: 2 },
+  title: { fontSize: 14, fontWeight: '500', color: '#3A3530' },
+  artist: { fontSize: 12, color: '#8B7D6B' },
 });
 
 const resultStyles = StyleSheet.create({
-  songRow: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    paddingHorizontal: 20,
-    paddingVertical: 8,
+  loading: { padding: 40, alignItems: 'center' },
+  loadingText: { fontSize: 14, color: '#8B7D6B' },
+  empty: { fontSize: 14, color: '#8B7D6B', textAlign: 'center', padding: 40 },
+  artistGrid: {
+    flexDirection: 'row', flexWrap: 'wrap',
+    paddingHorizontal: 20, gap: 16,
   },
-  songCover: { width: 44, height: 44, borderRadius: 10 },
-  songInfo: { flex: 1, marginLeft: 12 },
-  songTitle: { fontSize: 15, fontWeight: '500', color: '#3A3530' },
-  songArtist: { fontSize: 12, color: '#8B7D6B', marginTop: 3 },
-  artistRow: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    paddingVertical: 10,
+  artistCard: {
+    width: (SCREEN_WIDTH - 56) / 2,
+    alignItems: 'center', gap: 8,
   },
-  artistAvatar: { width: 48, height: 48, borderRadius: 24 },
-  artistName: { fontSize: 15, fontWeight: '500', color: '#3A3530', marginLeft: 12 },
+  artistCover: {
+    width: '100%', aspectRatio: 1, borderRadius: 999,
+  },
+  artistName: { fontSize: 13, fontWeight: '500', color: '#3A3530' },
+  playlistRow: {
+    flexDirection: 'row', alignItems: 'center', gap: 12,
+    paddingHorizontal: 20, paddingVertical: 8,
+  },
+  playlistCover: { width: 52, height: 52, borderRadius: 12 },
+  playlistInfo: { flex: 1, gap: 4 },
+  playlistTitle: { fontSize: 14, fontWeight: '500', color: '#3A3530' },
+  playlistMeta: { fontSize: 12, color: '#8B7D6B' },
 });
+
+

@@ -1,56 +1,71 @@
 import { Router } from 'express';
-import { songs } from '../data/music.js';
+import * as netease from '../services/netease.js';
 
-export const songsRouter = Router();
+const router = Router();
 
-// Static routes MUST be before dynamic routes
+// 静态路由必须在动态路由之前定义
 
-// GET /api/v1/songs/hot - 获取热门榜单 Top5
-songsRouter.get('/hot', (req, res) => {
-  const hotSongs = songs.slice(0, 5);
-  res.json({ data: hotSongs });
-});
-
-// GET /api/v1/songs/recent - 获取最近播放
-songsRouter.get('/recent', (req, res) => {
-  const recentSongs = songs.slice(5, 10);
-  res.json({ data: recentSongs });
-});
-
-// GET /api/v1/songs/recommend - 每日推荐
-songsRouter.get('/recommend', (req, res) => {
-  const shuffled = [...songs].sort(() => Math.random() - 0.5);
-  res.json({ data: shuffled.slice(0, 6) });
-});
-
-// GET /api/v1/songs/liked/list - 获取喜欢的歌曲
-songsRouter.get('/liked/list', (req, res) => {
-  const likedSongs = songs.filter(s => s.liked);
-  res.json({ data: likedSongs });
-});
-
-// GET /api/v1/songs - 获取所有歌曲
-songsRouter.get('/', (req, res) => {
-  res.json({ data: songs });
-});
-
-// GET /api/v1/songs/:id - 获取歌曲详情
-songsRouter.get('/:id', (req, res) => {
-  const song = songs.find(s => s.id === Number(req.params.id));
-  if (!song) {
-    res.status(404).json({ error: 'Song not found' });
-    return;
+/**
+ * 获取歌曲详情
+ * GET /api/v1/songs/detail?ids=1,2,3
+ */
+router.get('/detail', async (req, res) => {
+  try {
+    const ids = (req.query.ids as string || '').split(',').map(Number).filter(Boolean);
+    if (ids.length === 0) {
+      res.json({ code: 200, data: [] });
+      return;
+    }
+    const songs = await netease.getSongDetail(ids);
+    res.json({ code: 200, data: songs });
+  } catch (error: any) {
+    res.status(500).json({ code: 500, message: error.message });
   }
-  res.json({ data: song });
 });
 
-// POST /api/v1/songs/:id/like - 喜欢/取消喜欢
-songsRouter.post('/:id/like', (req, res) => {
-  const song = songs.find(s => s.id === Number(req.params.id));
-  if (!song) {
-    res.status(404).json({ error: 'Song not found' });
-    return;
+/**
+ * 获取每日推荐歌曲
+ * GET /api/v1/songs/daily
+ */
+router.get('/daily', async (req, res) => {
+  try {
+    const songs = await netease.getDailyRecommendSongs();
+    res.json({ code: 200, data: songs });
+  } catch (error: any) {
+    res.status(500).json({ code: 500, message: error.message });
   }
-  song.liked = !song.liked;
-  res.json({ data: { id: song.id, liked: song.liked } });
 });
+
+/**
+ * 获取歌曲播放地址
+ * GET /api/v1/songs/:id/url
+ */
+router.get('/:id/url', async (req, res) => {
+  try {
+    const id = parseInt(req.params.id);
+    const url = await netease.getSongUrl(id);
+    if (url) {
+      res.json({ code: 200, data: { url } });
+    } else {
+      res.json({ code: 200, data: { url: '' }, message: 'No playable URL' });
+    }
+  } catch (error: any) {
+    res.status(500).json({ code: 500, message: error.message });
+  }
+});
+
+/**
+ * 获取歌词
+ * GET /api/v1/songs/:id/lyric
+ */
+router.get('/:id/lyric', async (req, res) => {
+  try {
+    const id = parseInt(req.params.id);
+    const lyric = await netease.getLyric(id);
+    res.json({ code: 200, data: lyric });
+  } catch (error: any) {
+    res.status(500).json({ code: 500, message: error.message });
+  }
+});
+
+export default router;

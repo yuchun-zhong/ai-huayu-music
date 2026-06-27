@@ -1,24 +1,34 @@
 import { Router } from 'express';
-import { artists } from '../data/music.js';
+import * as netease from '../services/netease.js';
 
-export const artistsRouter = Router();
+const router = Router();
 
-// GET /api/v1/artists - 获取所有歌手
-artistsRouter.get('/', (req, res) => {
-  res.json({ data: artists });
-});
-
-// GET /api/v1/artists/recent - 最近播放的歌手
-artistsRouter.get('/recent', (req, res) => {
-  res.json({ data: artists.slice(0, 6) });
-});
-
-// GET /api/v1/artists/:id - 歌手详情
-artistsRouter.get('/:id', (req, res) => {
-  const artist = artists.find(a => a.id === Number(req.params.id));
-  if (!artist) {
-    res.status(404).json({ error: 'Artist not found' });
-    return;
+/**
+ * 获取热门歌手
+ * GET /api/v1/artists/top?limit=12
+ */
+router.get('/top', async (req, res) => {
+  try {
+    const limit = parseInt(req.query.limit as string) || 12;
+    const artists = await netease.getTopArtists(limit);
+    res.json({ code: 200, data: artists });
+  } catch (error: any) {
+    res.status(500).json({ code: 500, message: error.message });
   }
-  res.json({ data: artist });
 });
+
+/**
+ * 获取歌手热门歌曲
+ * GET /api/v1/artists/:id/songs
+ */
+router.get('/:id/songs', async (req, res) => {
+  try {
+    const id = parseInt(req.params.id);
+    const songs = await netease.getArtistHotSongs(id);
+    res.json({ code: 200, data: songs });
+  } catch (error: any) {
+    res.status(500).json({ code: 500, message: error.message });
+  }
+});
+
+export default router;
