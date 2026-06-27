@@ -25,15 +25,17 @@ export const api = {
 
   // Playlists
   getPersonalized: (limit = 10) =>
-    request(`/playlists/personalized?limit=${limit}`),
+    request(`/playlists/recommend?limit=${limit}`),
   getTopPlaylists: (cat = '全部', limit = 20) =>
-    request(`/playlists/top?cat=${encodeURIComponent(cat)}&limit=${limit}`),
+    request(`/playlists/hot?category=${encodeURIComponent(cat)}&limit=${limit}`),
   getHighQualityPlaylists: (cat = '全部', limit = 20) =>
-    request(`/playlists/highquality?cat=${encodeURIComponent(cat)}&limit=${limit}`),
+    request(`/playlists/hot?category=${encodeURIComponent(cat)}&limit=${limit}`),
   getTopList: () =>
     request('/playlists/toplist'),
   getPlaylistDetail: (id: number) =>
     request(`/playlists/${id}`),
+  getPlaylistTracks: (id: number) =>
+    request(`/playlists/${id}/tracks`),
 
   // Search
   search: (q: string, type = 'songs', limit = 30, offset = 0) =>

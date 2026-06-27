@@ -188,6 +188,25 @@ export async function getDailyRecommendSongs(): Promise<Song[]> {
   return [];
 }
 
+/** 获取榜单列表 */
+export async function getTopLists(): Promise<any[]> {
+  try {
+    const { data } = await http.get('/toplist');
+    if (data.list) {
+      return data.list.map((item: any) => ({
+        id: item.id,
+        name: item.name,
+        coverUrl: (item.coverImgUrl || item.picUrl || '').replace('http://', 'https://'),
+        description: item.description || '',
+        updateFrequency: item.updateFrequency || '',
+      }));
+    }
+  } catch (e) {
+    console.error('Netease toplist failed:', (e as any)?.message);
+  }
+  return [];
+}
+
 /** 获取热门歌手 */
 export async function getTopArtists(limit = 12): Promise<Artist[]> {
   try {

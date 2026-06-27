@@ -205,16 +205,19 @@ export default function SearchScreen() {
                 <Text style={styles.sectionTitle}>热门搜索</Text>
               </View>
               <View style={styles.hotList}>
-                {hotKeywords.map((item, idx) => (
-                  <TouchableOpacity
-                    key={item.keyword}
-                    style={styles.hotRow}
-                    onPress={() => doSearch(item.keyword)}
-                  >
-                    <Text style={[styles.hotRank, idx < 3 && styles.hotRankTop]}>{idx + 1}</Text>
-                    <Text style={styles.hotKeyword}>{item.keyword.trim()}</Text>
-                  </TouchableOpacity>
-                ))}
+                {hotKeywords.map((item, idx) => {
+                  const keyword = typeof item === 'string' ? item : (item.keyword || '');
+                  return (
+                    <TouchableOpacity
+                      key={keyword || idx}
+                      style={styles.hotRow}
+                      onPress={() => doSearch(keyword)}
+                    >
+                      <Text style={[styles.hotRank, idx < 3 && styles.hotRankTop]}>{idx + 1}</Text>
+                      <Text style={styles.hotKeyword}>{keyword}</Text>
+                    </TouchableOpacity>
+                  );
+                })}
               </View>
             </View>
           </>

@@ -87,7 +87,7 @@ export default function HomeScreen() {
   }, [playSong]);
 
   const quickEntries = [
-    { icon: 'sparkles' as const, label: '每日推荐', color: '#E8B4B8' },
+    { icon: 'wand-magic-sparkles' as const, label: '每日推荐', color: '#E8B4B8' },
     { icon: 'compact-disc' as const, label: '私人FM', color: '#7D8B6E' },
     { icon: 'chart-line' as const, label: '热门榜单', color: '#C9A96E' },
   ];

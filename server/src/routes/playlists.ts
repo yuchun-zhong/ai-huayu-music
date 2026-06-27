@@ -35,6 +35,19 @@ router.get('/hot', async (req, res) => {
 });
 
 /**
+ * 获取榜单列表
+ * GET /api/v1/playlists/toplist
+ */
+router.get('/toplist', async (req, res) => {
+  try {
+    const lists = await netease.getTopLists();
+    res.json({ code: 200, data: lists });
+  } catch (error: any) {
+    res.status(500).json({ code: 500, message: error.message });
+  }
+});
+
+/**
  * 获取歌单详情
  * GET /api/v1/playlists/:id
  */
