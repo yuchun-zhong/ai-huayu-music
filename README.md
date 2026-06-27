@@ -4,13 +4,17 @@
 
 ## 📱 界面预览
 
-| 🏠 首页 | 🔍 搜索 |
-|:---:|:---:|
-| ![首页](assets/screenshot-home.png) | ![搜索](assets/screenshot-search.png) |
+<p align="center">
+  <img src="assets/screenshot-home.png" alt="首页" width="200" />
+  <img src="assets/screenshot-search.png" alt="搜索" width="200" />
+  <img src="assets/screenshot-discover.png" alt="发现" width="200" />
+  <img src="assets/screenshot-ai-assistant.png" alt="AI助手" width="200" />
+  <img src="assets/screenshot-profile.png" alt="我的" width="200" />
+</p>
 
-| 🎵 发现 | 🤖 AI助手 | 👤 我的 |
-|:---:|:---:|:---:|
-| ![发现](assets/screenshot-discover.png) | ![AI助手](assets/screenshot-ai-assistant.png) | ![我的](assets/screenshot-profile.png) |
+<p align="center">
+  <sub>首页 &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; 搜索 &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; 发现 &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; AI助手 &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; 我的</sub>
+</p>
 
 ---
 
