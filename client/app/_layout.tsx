@@ -27,6 +27,10 @@ export default function RootLayout() {
           animation: 'slide_from_bottom',
           presentation: 'modal',
         }} />
+        <Stack.Screen name="settings" options={{
+          title: "",
+          animation: 'slide_from_right',
+        }} />
       </Stack>
       <Toast />
     </Provider>

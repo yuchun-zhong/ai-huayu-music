@@ -10,6 +10,7 @@ import Animated, {
   useAnimatedStyle,
   withRepeat,
   withTiming,
+  withSequence,
   cancelAnimation,
   Easing,
 } from 'react-native-reanimated';
@@ -21,6 +22,47 @@ import Slider from '@react-native-community/slider';
 
 const { width: SCREEN_WIDTH } = Dimensions.get('window');
 const DISC_SIZE = SCREEN_WIDTH * 0.55;
+
+// Bubble component for ambient effect
+function AmbientBubble({ delay, size, left, color }: { delay: number; size: number; left: number; color: string }) {
+  const translateY = useSharedValue(0);
+  const opacity = useSharedValue(0);
+
+  useEffect(() => {
+    translateY.value = withRepeat(
+      withSequence(
+        withTiming(-200, { duration: 4000 + delay * 500, easing: Easing.out(Easing.quad) }),
+        withTiming(0, { duration: 0 }),
+      ),
+      -1,
+      false,
+    );
+    opacity.value = withRepeat(
+      withSequence(
+        withTiming(0.6, { duration: 1500 + delay * 200 }),
+        withTiming(0, { duration: 2500 + delay * 300 }),
+        withTiming(0, { duration: 0 }),
+      ),
+      -1,
+      false,
+    );
+  }, []);
+
+  const bubbleStyle = useAnimatedStyle(() => ({
+    transform: [{ translateY: translateY.value }],
+    opacity: opacity.value,
+  }));
+
+  return (
+    <Animated.View
+      style={[
+        styles.bubble,
+        { width: size, height: size, left, bottom: 0, backgroundColor: color },
+        bubbleStyle,
+      ]}
+    />
+  );
+}
 
 function formatTime(seconds: number): string {
   const min = Math.floor(seconds / 60);
@@ -152,6 +194,18 @@ export default function PlayerScreen() {
         ) : (
           /* Disc View */
           <View style={styles.discContainer}>
+            {/* Ambient bubbles */}
+            {isPlaying && (
+              <View style={styles.bubbleContainer} pointerEvents="none">
+                <AmbientBubble delay={0} size={8} left={30} color="rgba(232,180,184,0.4)" />
+                <AmbientBubble delay={1} size={6} left={80} color="rgba(125,139,110,0.3)" />
+                <AmbientBubble delay={2} size={10} left={140} color="rgba(232,180,184,0.3)" />
+                <AmbientBubble delay={3} size={5} left={200} color="rgba(125,139,110,0.25)" />
+                <AmbientBubble delay={4} size={7} left={250} color="rgba(232,180,184,0.35)" />
+                <AmbientBubble delay={5} size={9} left={DISC_SIZE - 30} color="rgba(125,139,110,0.3)" />
+              </View>
+            )}
+
             {/* Decorative petals */}
             <View style={styles.petalDecor}>
               {[0, 60, 120, 180, 240, 300].map(angle => (
@@ -252,8 +306,16 @@ const styles = StyleSheet.create({
   topCenter: { flex: 1, alignItems: 'center' },
   topTitle: { fontSize: 14, fontWeight: '500', color: '#3A3530' },
   discContainer: {
-    width: DISC_SIZE + 40, height: DISC_SIZE + 40,
+    width: DISC_SIZE + 60, height: DISC_SIZE + 60,
     alignItems: 'center', justifyContent: 'center',
+  },
+  bubbleContainer: {
+    position: 'absolute', width: '100%', height: '100%',
+    overflow: 'hidden',
+  },
+  bubble: {
+    position: 'absolute',
+    borderRadius: 999,
   },
   petalDecor: {
     position: 'absolute', width: '100%', height: '100%',

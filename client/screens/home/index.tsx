@@ -142,7 +142,9 @@ export default function HomeScreen() {
             contentContainerStyle={styles.playlistList}
             keyExtractor={(item) => String(item.id)}
             renderItem={({ item }) => (
-              <PlaylistCard item={item} onPress={() => undefined} />
+              <PlaylistCard item={item} onPress={() => {
+                // Navigate to playlist detail (future feature)
+              }} />
             )}
           />
         </View>
