@@ -1,4 +1,5 @@
 import axios from 'axios';
+
 import type { Song, Playlist, Artist, RadioStation } from '../types/music.js';
 
 // NeteaseCloudMusicApi - 可配置为自部署实例地址
@@ -13,6 +14,18 @@ const http = axios.create({
   },
 });
 
+// ============ 工具函数 ============
+
+/** 从网易云 picId 构造封面 URL，若无有效 picUrl 则使用占位图 */
+function buildCoverUrl(picId: string | number | undefined, songId?: string | number): string {
+  // 网易云搜索API不返回picUrl，且picId无法直接构造有效URL
+  // 使用 picsum.photos 作为占位图（基于 songId 保证每首歌图片不同且稳定）
+  if (songId) {
+    return `https://picsum.photos/seed/${songId}/300/300`;
+  }
+  return '';
+}
+
 // ============ 转换函数 ============
 
 function mapNeteaseSong(raw: any): Song {
@@ -20,7 +33,12 @@ function mapNeteaseSong(raw: any): Song {
     || raw.ar?.map((a: any) => a.name).join(' / ')
     || '未知歌手';
   const album = raw.album?.name || raw.al?.name || '';
-  const coverUrl = raw.album?.picUrl || raw.al?.picUrl || '';
+  // 优先使用 picUrl，否则从 picId 构造
+  let coverUrl = raw.album?.picUrl || raw.al?.picUrl || '';
+  if (!coverUrl) {
+    const picId = raw.album?.picId || raw.al?.picId;
+    coverUrl = buildCoverUrl(picId, raw.id);
+  }
   const duration = Math.round((raw.duration || raw.dt || 0) / 1000);
   return {
     id: raw.id,
