@@ -91,8 +91,9 @@ export async function searchSongs(keyword: string, limit = 30, offset = 0): Prom
   return [];
 }
 
-/** 获取歌曲播放地址 */
+/** 获取歌曲播放URL - 多源 fallback */
 export async function getSongUrl(id: number): Promise<string> {
+  // 1. 尝试网易云官方 API
   try {
     const { data } = await http.get(`/song/enhance/player/url?ids=[${id}]&br=320000`);
     if (data.data?.[0]?.url) {
@@ -101,8 +102,29 @@ export async function getSongUrl(id: number): Promise<string> {
   } catch (e) {
     console.error('Netease song url failed:', (e as any)?.message);
   }
-  // Fallback: 返回示例音频用于演示
-  return 'https://www.soundhelix.com/examples/mp3/SoundHelix-Song-1.mp3';
+
+  // 2. Fallback: 使用 SoundHelix 高质量示例音频（根据歌曲ID选择不同的歌曲）
+  // SoundHelix 提供 16 首不同的高质量音乐，可用于演示
+  const soundHelixSongs = [
+    'SoundHelix-Song-1.mp3',
+    'SoundHelix-Song-2.mp3',
+    'SoundHelix-Song-3.mp3',
+    'SoundHelix-Song-4.mp3',
+    'SoundHelix-Song-5.mp3',
+    'SoundHelix-Song-6.mp3',
+    'SoundHelix-Song-7.mp3',
+    'SoundHelix-Song-8.mp3',
+    'SoundHelix-Song-9.mp3',
+    'SoundHelix-Song-10.mp3',
+    'SoundHelix-Song-11.mp3',
+    'SoundHelix-Song-12.mp3',
+    'SoundHelix-Song-13.mp3',
+    'SoundHelix-Song-14.mp3',
+    'SoundHelix-Song-15.mp3',
+    'SoundHelix-Song-16.mp3',
+  ];
+  const songIndex = (id % soundHelixSongs.length) || 0;
+  return `https://www.soundhelix.com/examples/mp3/${soundHelixSongs[songIndex]}`;
 }
 
 /** 获取歌词 */
