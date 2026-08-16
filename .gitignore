@@ -45,3 +45,4 @@ out
 # OS
 Thumbs.db
 .cozeproj/reduction
+.codegraph
